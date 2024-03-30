@@ -2,14 +2,24 @@ use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
 use ndarray::{arr2};
 use num::Complex;
 
-pub fn build_circuit_from_data(grid: Vec<Vec<&str>>) -> Vec<Vec<QuantumGateWrapper>> {
-    let mut return_list: Vec<Vec<QuantumGateWrapper>> = Vec::new();
+#[derive(Debug, Clone, PartialEq)]
+pub struct UnparsedCircuit {
+    pub circuit: Vec<Vec<String>>,
+}
 
-    for step in 0..grid[0].len() {
+#[derive(Debug, Clone, PartialEq)]
+pub struct ParsedCircuit {
+    pub circuit: Vec<Vec<QuantumGateWrapper>>,
+}
+
+pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
+    let mut return_list: ParsedCircuit = ParsedCircuit { circuit: Vec::new()};
+
+    for step in 0..grid.circuit[0].len() {
         let mut time_step: Vec<QuantumGateWrapper> = Vec::new();
 
-        for (i, qubit) in grid.iter().enumerate() {
-            let gate = parse_gate(qubit[step]);
+        for (i, qubit) in grid.circuit.iter().enumerate() {
+            let gate = parse_gate(qubit[step].as_str());
 
             if gate.size > 0 {
                 let mut qubits: Vec<usize> = Vec::new();
@@ -27,7 +37,7 @@ pub fn build_circuit_from_data(grid: Vec<Vec<&str>>) -> Vec<Vec<QuantumGateWrapp
             }
         }
 
-        return_list.push(time_step);
+        return_list.circuit.push(time_step);
     }
 
     return_list

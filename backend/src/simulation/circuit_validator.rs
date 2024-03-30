@@ -5,6 +5,7 @@
 // Atleast one column must be present
 
 use serde::Serialize;
+use crate::simulation::circuit_parser::{UnparsedCircuit};
 
 #[derive(Debug, PartialEq, Serialize)]
 pub enum QuantumCircuitError {
@@ -17,17 +18,17 @@ pub enum QuantumCircuitError {
 
 // Ensures that all rows are the same length and that there is at least one row
 // and that the number of rows is between 1 and 6
-pub fn validate_grid_input(grid: &Vec<Vec<&str>>) -> Result<(), QuantumCircuitError> {
-    if grid.is_empty() {
+pub fn validate_grid_input(grid: &UnparsedCircuit) -> Result<(), QuantumCircuitError> {
+    if grid.circuit.is_empty() {
         return Err(QuantumCircuitError::TooFewQubits);
     }
 
-    if grid.len() > 6 {
+    if grid.circuit.len() > 6 {
         return Err(QuantumCircuitError::TooManyQubits);
     }
 
-    let row_length = grid[0].len();
-    for row in grid {
+    let row_length = grid.circuit[0].len();
+    for row in grid.circuit.clone().iter() {
         if row.len() != row_length {
             return Err(QuantumCircuitError::InvalidRowLength);
         }
@@ -35,9 +36,9 @@ pub fn validate_grid_input(grid: &Vec<Vec<&str>>) -> Result<(), QuantumCircuitEr
 
     // Validate steps (columns)
     for i in 0..row_length {
-        let mut col: Vec<&str> = Vec::new();
-        for row in grid {
-            col.push(row[i]);
+        let mut col: Vec<String> = Vec::new();
+        for row in grid.circuit.clone().iter() {
+            col.push(row[i].clone());
         }
 
         match validate_col(&col) {
@@ -97,7 +98,7 @@ fn ensure_multi_qubit_gate(gate: &str, prev_gate: &str) -> Result<(), QuantumCir
 // Go through each gate and check if it is valid
 // If a multi-qubit gate is present, check if the other parts of the gate are in the same step
 // by adding them to a list and removing them if they are found
-fn validate_col(row: &Vec<&str>) -> Result<(), QuantumCircuitError> {
+fn validate_col(row: &Vec<String>) -> Result<(), QuantumCircuitError> {
     let mut next_multi_qubit_gate = "";
 
     for gate in row {
@@ -105,7 +106,7 @@ fn validate_col(row: &Vec<&str>) -> Result<(), QuantumCircuitError> {
             return Err(QuantumCircuitError::InvalidGate);
         }
 
-        if !next_multi_qubit_gate.is_empty() && gate != &next_multi_qubit_gate {
+        if !next_multi_qubit_gate.is_empty() && gate != next_multi_qubit_gate {
             println!(
                 "gate: {}, next_multi_qubit_gate: {}",
                 gate, next_multi_qubit_gate

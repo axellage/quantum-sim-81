@@ -14,6 +14,8 @@ use rocket::http::Status;
 use rocket::response::{self, Responder, Response};
 use rocket::Request;
 use crate::simulation::quantum_state::QuantumStep;
+use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
+use crate::simulation::circuit_parser::{UnparsedCircuit};
 
 #[derive(Serialize, Deserialize)]
 struct IncomingData {
@@ -57,15 +59,10 @@ impl<'r> Responder<'r, 'static> for ApiError {
 fn simulate_circuit_handler(
     incoming_data: Json<IncomingData>,
 ) -> Result<Json<OutgoingData>, ApiError> {
-    let binding = incoming_data.into_inner();
+    
+    let matrix = incoming_data.into_inner().circuit_matrix;
 
-    let matrix = binding
-        .circuit_matrix
-        .iter()
-        .map(|row| row.iter().map(|item| item.as_str()).collect())
-        .collect();
-
-    match simulation::simulator::simulate_circuit(matrix) {
+    match simulation::simulator::simulate_circuit_handler(UnparsedCircuit {circuit: matrix}) {
         Ok(state_list) => {
             let outgoing_data = OutgoingData { state_list };
             Ok(Json(outgoing_data))

@@ -3,25 +3,30 @@ use crate::simulation::circuit_parser::build_circuit_from_data;
 use crate::simulation::circuit_validator::{validate_grid_input, QuantumCircuitError};
 use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
 use crate::simulation::quantum_state::{QuantumState, QuantumStateWrapper, QuantumStep};
+use crate::simulation::circuit_parser::{UnparsedCircuit, ParsedCircuit};
 use crate::simulation::utils::{format_to_complex_container, to_little_endian};
 use crate::Step;
 use ndarray::{arr2, Array1};
 use num::Complex;
 
-pub fn simulate_circuit(incoming_data: Vec<Vec<&str>>) -> Result<Vec<QuantumStep>, QuantumCircuitError> {
+pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<QuantumStep>, QuantumCircuitError> {
     let validation_result = validate_grid_input(&incoming_data);
     if validation_result.is_err() {
         return Err(validation_result.unwrap_err());
     }
 
-    let circuit: Vec<Vec<QuantumGateWrapper>> = build_circuit_from_data(incoming_data);
+    let parsed_circuit: ParsedCircuit = build_circuit_from_data(incoming_data);
+    let simulated_states: Vec<QuantumStep> = simulate_circuit(parsed_circuit);
 
+    Ok(simulated_states)
+}
 
+fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
     let mut states: QuantumStep = QuantumStep {
         states: vec![],
     };
 
-    for i in 0..circuit.first().unwrap().len() {
+    for i in 0..circuit.circuit.first().unwrap().len() {
         states.states.push(QuantumStateWrapper {
             state: QuantumState::new(&[0]),
             qubits: vec![i],
@@ -31,7 +36,7 @@ pub fn simulate_circuit(incoming_data: Vec<Vec<&str>>) -> Result<Vec<QuantumStep
 
     let mut state_list: Vec<QuantumStep> = vec![states];
 
-    for (step, step_gate) in circuit.into_iter().enumerate() {
+    for (step, step_gate) in circuit.circuit.into_iter().enumerate() {
         let mut new_state_list: Vec<QuantumStateWrapper> = vec![];
 
         for gate in step_gate {
@@ -101,8 +106,7 @@ pub fn simulate_circuit(incoming_data: Vec<Vec<&str>>) -> Result<Vec<QuantumStep
             states: new_state_list,
         });
     }
-
-    Ok(state_list)
+    state_list
 }
 
 #[cfg(test)]
