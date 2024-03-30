@@ -12,10 +12,9 @@ pub struct QuantumStep {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct QuantumStateWrapper {
-    pub state: QuantumState,
     pub qubits: Vec<usize>,
+    pub state: QuantumState,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct QuantumState {
