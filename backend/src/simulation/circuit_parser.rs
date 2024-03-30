@@ -16,31 +16,32 @@ pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
     let mut return_list: ParsedCircuit = ParsedCircuit { circuit: Vec::new()};
 
     for step in 0..grid.circuit[0].len() {
-        let mut time_step: Vec<QuantumGateWrapper> = Vec::new();
+        let mut current_gates: Vec<QuantumGateWrapper> = Vec::new();
 
-        for (i, qubit) in grid.circuit.iter().enumerate() {
-            let gate = parse_gate(qubit[step].as_str());
-
-            if gate.size > 0 {
-                let mut qubits: Vec<usize> = Vec::new();
-
-                for qubit_index in 0..gate.size {
-                    qubits.push(i + qubit_index);
-                }
-
-                time_step.push(
-                    QuantumGateWrapper {
-                        gate,
-                        qubits,
-                    }
-                );
+        for (i, qubit_line) in grid.circuit.iter().enumerate() {
+            let gate: QuantumGate = parse_gate(qubit_line[step].as_str());
+            let mut operands: Vec<usize> = vec![i];
+            if(step != 0){
+                operands = find_qubits_that_are_entangled_to_qubit(i, return_list.circuit[step - 1].clone())
             }
+            current_gates.push(QuantumGateWrapper {qubits: operands, gate: gate,});
         }
 
-        return_list.circuit.push(time_step);
+        let mut time_step: Vec<QuantumGateWrapper> = Vec::new();
+
+        return_list.circuit.push(current_gates);
     }
 
     return_list
+}
+
+fn find_qubits_that_are_entangled_to_qubit(qubit: usize, gates_with_operands_in_previous_step: Vec<QuantumGateWrapper>) -> Vec<usize> {
+    for (index, gate_with_operands) in gates_with_operands_in_previous_step.iter().enumerate(){
+        if(gate_with_operands.qubits.contains(&qubit)){
+            return gate_with_operands.qubits.clone();
+        }
+    }
+    vec![]
 }
 
 fn parse_gate(gate_string: &str) -> QuantumGate {
