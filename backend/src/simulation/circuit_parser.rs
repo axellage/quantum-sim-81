@@ -7,13 +7,27 @@ pub struct UnparsedCircuit {
     pub circuit: Vec<Vec<String>>,
 }
 
+impl From<Vec<Vec<&str>>> for UnparsedCircuit {
+    fn from(circuit: Vec<Vec<&str>>) -> Self {
+        let mut new_circuit: Vec<Vec<String>> = Vec::new();
+        for row in circuit {
+            let mut new_row: Vec<String> = Vec::new();
+            for gate in row {
+                new_row.push(gate.to_string());
+            }
+            new_circuit.push(new_row);
+        }
+        UnparsedCircuit { circuit: new_circuit }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ParsedCircuit {
     pub circuit: Vec<Vec<QuantumGateWrapper>>,
 }
 
 pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
-    let mut return_list: ParsedCircuit = ParsedCircuit { circuit: Vec::new()};
+    let mut return_list: ParsedCircuit = ParsedCircuit { circuit: Vec::new() };
 
     for step in 0..grid.circuit[0].len() {
         let mut current_gates: Vec<QuantumGateWrapper> = Vec::new();
@@ -21,10 +35,10 @@ pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
         for (i, qubit_line) in grid.circuit.iter().enumerate() {
             let gate: QuantumGate = parse_gate(qubit_line[step].as_str());
             let mut operands: Vec<usize> = vec![i];
-            if(step != 0){
+            if step != 0 {
                 operands = find_qubits_that_are_entangled_to_qubit(i, return_list.circuit[step - 1].clone())
             }
-            current_gates.push(QuantumGateWrapper {qubits: operands, gate: gate,});
+            current_gates.push(QuantumGateWrapper { qubits: operands, gate: gate });
         }
 
         let mut time_step: Vec<QuantumGateWrapper> = Vec::new();
@@ -36,8 +50,8 @@ pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
 }
 
 fn find_qubits_that_are_entangled_to_qubit(qubit: usize, gates_with_operands_in_previous_step: Vec<QuantumGateWrapper>) -> Vec<usize> {
-    for (index, gate_with_operands) in gates_with_operands_in_previous_step.iter().enumerate(){
-        if(gate_with_operands.qubits.contains(&qubit)){
+    for (index, gate_with_operands) in gates_with_operands_in_previous_step.iter().enumerate() {
+        if gate_with_operands.qubits.contains(&qubit) {
             return gate_with_operands.qubits.clone();
         }
     }
@@ -77,11 +91,12 @@ mod tests {
         let q0 = vec!["X"];
         let grid = vec![q0];
 
-        let circuit = build_circuit_from_data(grid);
+        let circuit: ParsedCircuit = build_circuit_from_data(UnparsedCircuit::from(grid));
 
 
-        let expected_result: Vec<Vec<QuantumGateWrapper>> =
-            vec![vec![QuantumGateWrapper { gate: QuantumGate::x_gate(), qubits: vec![0] }]];
+        let expected_result: ParsedCircuit = ParsedCircuit {
+            circuit: vec![vec![QuantumGateWrapper { gate: QuantumGate::x_gate(), qubits: vec![0] }]]
+        };
 
         assert_eq!(circuit, expected_result);
     }
@@ -91,13 +106,14 @@ mod tests {
         let q0 = vec!["X", "H"];
         let grid = vec![q0];
 
-        let circuit = build_circuit_from_data(grid);
+        let circuit = build_circuit_from_data(UnparsedCircuit::from(grid));
 
-        let expected_result: Vec<Vec<QuantumGateWrapper>> =
-            vec![
+        let expected_result = ParsedCircuit {
+            circuit: vec![
                 vec![QuantumGateWrapper { gate: QuantumGate::x_gate(), qubits: vec![0] }],
                 vec![QuantumGateWrapper { gate: QuantumGate::h_gate(), qubits: vec![0] }],
-            ];
+            ]
+        };
 
         assert_eq!(circuit, expected_result);
     }
@@ -109,15 +125,16 @@ mod tests {
 
         let grid = vec![q0, q1];
 
-        let circuit = build_circuit_from_data(grid);
+        let circuit = build_circuit_from_data(UnparsedCircuit::from(grid));
 
-        let expected_result: Vec<Vec<QuantumGateWrapper>> =
-            vec![
+        let expected_result = ParsedCircuit {
+            circuit: vec![
                 vec![QuantumGateWrapper { gate: QuantumGate::h_gate(), qubits: vec![0] },
                      QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![1] }],
                 vec![QuantumGateWrapper { gate: QuantumGate::cnot_gate(), qubits: vec![0, 1] },
                 ],
-            ];
+            ]
+        };
 
         assert_eq!(circuit, expected_result);
     }
@@ -130,9 +147,10 @@ mod tests {
             vec!["I", "I", "CNOT-2"],
         ];
 
-        let circuit = build_circuit_from_data(grid);
+        let circuit = build_circuit_from_data(UnparsedCircuit::from(grid));
 
-        let expected_result: Vec<Vec<QuantumGateWrapper>> =
+        let expected_result = ParsedCircuit {
+            circuit:
             vec![
                 vec![QuantumGateWrapper { gate: QuantumGate::h_gate(), qubits: vec![0] },
                      QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![1] },
@@ -141,7 +159,8 @@ mod tests {
                      QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![2] }],
                 vec![QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![0] },
                      QuantumGateWrapper { gate: QuantumGate::cnot_gate(), qubits: vec![1, 2] }],
-            ];
+            ]
+        };
 
         println!("{:?}", circuit);
 

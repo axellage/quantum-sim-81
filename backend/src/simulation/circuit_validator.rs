@@ -137,9 +137,9 @@ mod tests {
         let valid_grid = vec![vec!["I", "H"], vec!["X", "Y"]];
         let invalid_grid = vec![vec!["I", "H"], vec!["X", "Y", "Z"]];
 
-        assert_eq!(validate_grid_input(&valid_grid), Ok(()));
+        assert_eq!(validate_grid_input(&UnparsedCircuit::from(valid_grid)), Ok(()));
         assert_eq!(
-            validate_grid_input(&invalid_grid),
+            validate_grid_input(&UnparsedCircuit::from(invalid_grid)),
             Err(QuantumCircuitError::InvalidRowLength)
         );
     }
@@ -168,7 +168,7 @@ mod tests {
             vec!["CNOT-1", "I", "CNOT-2"], // CNOT-1 and CNOT-2 separated by an I gate
         ];
         assert_eq!(
-            validate_grid_input(&separated_multi_qubit_gate_grid),
+            validate_grid_input(&UnparsedCircuit::from(separated_multi_qubit_gate_grid)),
             Err(QuantumCircuitError::MultiQubitGateMismatch)
         );
     }
@@ -179,7 +179,7 @@ mod tests {
             vec!["CNOT-2", "CNOT-1"], // CNOT-2 and CNOT-1 in alone in a step
         ];
         assert_eq!(
-            validate_grid_input(&grid),
+            validate_grid_input(&UnparsedCircuit::from(grid)),
             Err(QuantumCircuitError::MultiQubitGateMismatch)
         );
     }
@@ -196,7 +196,7 @@ mod tests {
             vec!["I", "S"],
         ];
         assert_eq!(
-            validate_grid_input(&grid),
+            validate_grid_input(&UnparsedCircuit::from(grid)),
             Err(QuantumCircuitError::TooManyQubits)
         );
     }
@@ -207,7 +207,7 @@ mod tests {
             vec!["CNOT-1"], // Missing CNOT-2
         ];
         assert_eq!(
-            validate_grid_input(&grid),
+            validate_grid_input(&UnparsedCircuit::from(grid)),
             Err(QuantumCircuitError::MultiQubitGateMismatch)
         );
     }
@@ -216,7 +216,7 @@ mod tests {
     fn test_valid_circuit_inconsistent_row_lengths() {
         let grid = vec![vec!["I", "H", "X"], vec!["X", "Y"]];
         assert_eq!(
-            validate_grid_input(&grid),
+            validate_grid_input(&UnparsedCircuit::from(grid)),
             Err(QuantumCircuitError::InvalidRowLength)
         );
     }
@@ -224,20 +224,20 @@ mod tests {
     #[test]
     fn valid_circuit() {
         let grid = vec![vec!["H", "CNOT-1"], vec!["I", "CNOT-2"]];
-        assert_eq!(validate_grid_input(&grid), Ok(()));
+        assert_eq!(validate_grid_input(&UnparsedCircuit::from(grid)), Ok(()));
     }
 
     #[test]
     fn valid_circuit_with_single_gate() {
         let grid = vec![vec!["H"]];
-        assert_eq!(validate_grid_input(&grid), Ok(()));
+        assert_eq!(validate_grid_input(&UnparsedCircuit::from(grid)), Ok(()));
     }
 
     #[test]
     fn ending_with_multi_qubit_gate() {
         let grid = vec![vec!["H", "CNOT-2"], vec!["I", "CNOT-2"]];
         assert_eq!(
-            validate_grid_input(&grid),
+            validate_grid_input(&UnparsedCircuit::from(grid)),
             Err(QuantumCircuitError::MultiQubitGateMismatch)
         );
     }

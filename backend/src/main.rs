@@ -24,7 +24,12 @@ struct IncomingData {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Step {
-    step: usize,
+    states: Vec<State>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct State {
+    qubits: Vec<usize>,
     state: Vec<ComplexContainer>,
 }
 
@@ -36,7 +41,7 @@ struct ComplexContainer {
 
 #[derive(Serialize, Deserialize)]
 struct OutgoingData {
-    state_list: Vec<QuantumStep>,
+    state_list: Vec<Step>,
 }
 
 #[derive(Debug, Serialize)]
@@ -59,12 +64,32 @@ impl<'r> Responder<'r, 'static> for ApiError {
 fn simulate_circuit_handler(
     incoming_data: Json<IncomingData>,
 ) -> Result<Json<OutgoingData>, ApiError> {
-    
     let matrix = incoming_data.into_inner().circuit_matrix;
 
-    match simulation::simulator::simulate_circuit_handler(UnparsedCircuit {circuit: matrix}) {
+    match simulation::simulator::simulate_circuit_handler(UnparsedCircuit { circuit: matrix }) {
         Ok(state_list) => {
-            let outgoing_data = OutgoingData { state_list };
+            let mut step_list = Vec::new();
+
+            for step in state_list {
+                let mut state_vec = Vec::new();
+                for state in step.states {
+                    let mut complex_vec = Vec::new();
+                    for complex in state.state.col.iter() {
+                        complex_vec.push(ComplexContainer {
+                            re: complex.re,
+                            im: complex.im,
+                        });
+                    }
+                    state_vec.push(State {
+                        qubits: state.qubits.clone(),
+                        state: complex_vec,
+                    });
+                }
+                step_list.push(Step { states: state_vec });
+            }
+
+
+            let outgoing_data = OutgoingData { state_list: step_list };
             Ok(Json(outgoing_data))
         }
         Err(err) => Err(ApiError { error: err }),
@@ -137,10 +162,7 @@ mod tests {
             .dispatch();
 
         //let expected_response = r#"{"state_list":[{"step":0,"state":[{"re":1.0,"im":0.0},{"re":0.0,"im":0.0},{"re":0.0,"im":0.0},{"re":0.0,"im":0.0}]},{"step":1,"state":[{"re":0.7071067811865475,"im":0.0},{"re":0.7071067811865475,"im":0.0},{"re":0.0,"im":0.0},{"re":0.0,"im":0.0}]},{"step":2,"state":[{"re":0.4999999999999999,"im":0.0},{"re":0.4999999999999999,"im":0.0},{"re":0.4999999999999999,"im":0.0},{"re":0.4999999999999999,"im":0.0}]}]}"#;
-        let expected_response = r#"{"state_list":[
-        {"states":[{"qubits":[0],"state":{"col":{"v":1,"dim":[2,1],"data":[[1.0,0.0],[0.0,0.0]]}}},{"qubits":[1],"state":{"col":{"v":1,"dim":[2,1],"data":[[1.0,0.0],[0.0,0.0]]}}}]},
-        {"states":[{"qubits":[0],"state":{"col":{"v":1,"dim":[2,1],"data":[[0.7071067811865475,0.0],[0.7071067811865475,0.0]]}}},{"qubits":[1],"state":{"col":{"v":1,"dim":[2,1],"data":[[1.0,0.0],[0.0,0.0]]}}}]},
-        {"states":[{"qubits":[0],"state":{"col":{"v":1,"dim":[2,1],"data":[[0.7071067811865475,0.0],[0.7071067811865475,0.0]]}}},{"qubits":[1],"state":{"col":{"v":1,"dim":[2,1],"data":[[0.7071067811865475,0.0],[0.7071067811865475,0.0]]}}}]}]}"#;
+        let expected_response = r#"{"state_list":[{"states":[{"qubits":[0],"state":[{"re":1.0,"im":0.0},{"re":0.0,"im":0.0}]},{"qubits":[1],"state":[{"re":1.0,"im":0.0},{"re":0.0,"im":0.0}]}]},{"states":[{"qubits":[0],"state":[{"re":0.7071067811865475,"im":0.0},{"re":0.7071067811865475,"im":0.0}]},{"qubits":[1],"state":[{"re":1.0,"im":0.0},{"re":0.0,"im":0.0}]}]},{"states":[{"qubits":[0],"state":[{"re":0.7071067811865475,"im":0.0},{"re":0.7071067811865475,"im":0.0}]},{"qubits":[1],"state":[{"re":0.7071067811865475,"im":0.0},{"re":0.7071067811865475,"im":0.0}]}]}]}"#;
         assert_eq!(response.status(), Status::Ok);
         assert_eq!(response.into_string(), Some(expected_response.to_string()));
     }

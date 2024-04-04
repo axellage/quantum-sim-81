@@ -18,6 +18,7 @@ pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<Qu
     let parsed_circuit: ParsedCircuit = build_circuit_from_data(incoming_data);
     let simulated_states: Vec<QuantumStep> = simulate_circuit(parsed_circuit);
 
+
     Ok(simulated_states)
 }
 
@@ -118,7 +119,7 @@ mod tests {
     #[test]
     fn test_simulate_not() {
         let incoming_data = vec![vec!["X"]];
-        let result = simulate_circuit_handler(incoming_data);
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
         let expected_result = vec![
             QuantumStep {
@@ -141,7 +142,7 @@ mod tests {
     #[test]
     fn test_simulate_hadamard() {
         let incoming_data = vec![vec!["H"]];
-        let result = simulate_circuit_handler(incoming_data);
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
         let expected_result = vec![
             QuantumStep {
@@ -169,7 +170,7 @@ mod tests {
     #[test]
     fn test_simulate_not_on_index() {
         let incoming_data = vec![vec!["I"], vec!["X"]];
-        let result = simulate_circuit_handler(incoming_data);
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
         let expected_result = vec![
             QuantumStep {
@@ -204,7 +205,7 @@ mod tests {
     #[test]
     fn test_x_gate_on_index() {
         let incoming_data = vec![vec!["X"], vec!["I"]];
-        let result = simulate_circuit_handler(incoming_data);
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
         let expected_result = vec![
             QuantumStep {
@@ -239,7 +240,7 @@ mod tests {
     #[test]
     fn test_cnot_gate_on_index() {
         let incoming_data = vec![vec!["X", "CNOT-1"], vec!["I", "CNOT-2"]];
-        let result = simulate_circuit_handler(incoming_data);
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
         let expected_result = vec![
             QuantumStep {
@@ -281,7 +282,7 @@ mod tests {
 
     #[test]
     fn test_entanglement_circuit() {
-        let incoming_data = UnparsedCircuit { circuit: vec![vec!["H", "CNOT-1"], vec!["I", "CNOT-2"]]};
+        let incoming_data = UnparsedCircuit::from(vec![vec!["H", "CNOT-1"], vec!["I", "CNOT-2"]]);
         let result = simulate_circuit_handler(incoming_data);
 
         let expected_result = vec![
@@ -336,11 +337,14 @@ mod tests {
 
     #[test]
     fn test_ghz_state_circuit() {
-        let incoming_data = UnparsedCircuit { circuit: vec![
-            vec!["H", "CNOT-1", "I"],
-            vec!["I", "CNOT-2", "CNOT-1"],
-            vec!["I", "I", "CNOT-2"],
-        ]};
+        let incoming_data = UnparsedCircuit::from(
+            vec![
+                vec!["H", "CNOT-1", "I"],
+                vec!["I", "CNOT-2", "CNOT-1"],
+                vec!["I", "I", "CNOT-2"],
+            ]
+        );
+
         let result = simulate_circuit_handler(incoming_data);
 
         let expected_result = vec![
