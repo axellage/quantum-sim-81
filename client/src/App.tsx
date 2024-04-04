@@ -7,6 +7,10 @@ import axios from 'axios';
 import Circuitboard from './circuitboard';
 import './slider.css'
 
+
+import { BarChart } from '@mui/x-charts/BarChart';
+import { axisClasses } from '@mui/x-charts/ChartsAxis';
+
 function App() {
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
   const [circuit, setCircuit] = useState([["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"]]);
@@ -111,7 +115,7 @@ function handleDragEnd(event:any){
     return newCircuit;
   }
 
-  function getState(step: number) {
+  function getState(step: number): string {
     let allStates: string[] = [];
 
     states.map((timeStep) => (
@@ -122,13 +126,65 @@ function handleDragEnd(event:any){
   }
 
   function States() {
-    //parses back to JSON object
-    let state = JSON.parse(getState(stepNumber)); 
-    console.log(state[0])
-    
+    let state = getState(stepNumber) ? JSON.parse(getState(stepNumber)) : null
+    if (state !== null){
+      console.log("hej")
+      console.log(state[0].re)
+      console.log("okej")
+    }
+
+
+    const valueFormatter = (value:any) => `${value}mm`;
+
+    const chartSetting = {
+      yAxis: [
+        {
+          label: 'rainfall (mm)',
+        },
+      ],
+      series: [{ dataKey: 'probability', label: 'Probabilities', valueFormatter }],
+      height: 300,
+      sx: {
+        [`& .${axisClasses.directionY} .${axisClasses.label}`]: {
+          transform: 'translateX(-10px)',
+        },
+      },
+    };
+
+    const tickPlacement = 'middle';
+    const tickLabelPlacement = 'middle';
+
+    //TODO:
+    {/*let probabilities: number[] = getProbabilities();
+
+    function getProbabilities(): number[] {
+      throw new Error('Function not implemented.');
+    } */}
+
+    const dataset = [
+      {
+        probability: state[0].re,
+        bitstring: '0000',
+      },
+      {
+        probability: state[1].re,
+        bitstring: '0001',
+      },
+      {
+        probability: state[2].re,
+        bitstring: '0010',
+      }]
+  
     return (
       <section className="states">
-        <h2>{getState(stepNumber)}</h2>
+        {/*<h2>{getState(stepNumber)}</h2>*/}
+        <BarChart
+        dataset={dataset}
+        xAxis={[
+          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement },
+        ]}
+        {...chartSetting}
+      />
       </section>
     );
 }
@@ -154,3 +210,5 @@ function handleDragEnd(event:any){
 
 
 export default App;
+
+
