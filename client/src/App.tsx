@@ -167,7 +167,7 @@ function handleDragEnd(event:any){
 
     let dataset = [{}];
     if (state !== null){
-      dataset = [
+      {/*dataset = [
         {
           probability: state[0].re,
           bitstring: '000000',
@@ -195,7 +195,23 @@ function handleDragEnd(event:any){
         {
           probability: state[32].re,
           bitstring: '100000',
-        }]
+        }] */}
+
+        dataset = getProbabilities(state);
+    }
+
+    function getProbabilities(stateList: {re:number, im:number}[]): {}[] {
+      let probabilities: {probability: number, bitstring: string}[] = [];
+      let bitstring: string;
+      let probability: number;
+
+      for (let i = 0; i < stateList.length; i++) {
+        bitstring = toBitString(i);
+        probability = (stateList[i].re)*(stateList[i].re);
+        probabilities.push({probability: probability, bitstring: `${bitstring}`})
+      }
+
+      return probabilities;
     }
   
     return (
@@ -236,30 +252,23 @@ function handleDragEnd(event:any){
 export default App;
 
 function toBitString(num: number): string {
-  // Ensure num is a non-negative integer
-  if (num < 0 || !Number.isInteger(num)) {
-      throw new Error("Input must be a non-negative integer");
-  }
 
-  // If num is 0, return "000000"
   if (num === 0) {
       return "000000";
   }
 
   let result: string = "";
 
-  // Convert num to binary representation
   while (num > 0) {
-      // Append the least significant bit of num to the result
       result = (num & 1) + result;
-      // Right shift num by 1 bit
       num >>= 1;
   }
 
-  // Pad the result with leading zeros to make it 6 bits long
   while (result.length < 6) {
       result = "0" + result;
   }
 
   return result;
 }
+
+
