@@ -10,6 +10,7 @@ import './slider.css'
 
 import { BarChart } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import { DatasetType } from '@mui/x-charts/models/seriesType/config';
 
 function App() {
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
@@ -131,15 +132,18 @@ function handleDragEnd(event:any){
       console.log("hej")
       console.log(state[0].re)
       console.log("okej")
+      console.log(toBitString(10))
+      console.log(toBitString(0))
+      console.log(toBitString(63))
     }
 
 
-    const valueFormatter = (value:any) => `${value}mm`;
+    const valueFormatter = (value:any) => `${value}`;
 
     const chartSetting = {
       yAxis: [
         {
-          label: 'rainfall (mm)',
+          label: 'Probability', min: 0, max: 1,
         },
       ],
       series: [{ dataKey: 'probability', label: 'Probabilities', valueFormatter }],
@@ -161,19 +165,38 @@ function handleDragEnd(event:any){
       throw new Error('Function not implemented.');
     } */}
 
-    const dataset = [
-      {
-        probability: state[0].re,
-        bitstring: '0000',
-      },
-      {
-        probability: state[1].re,
-        bitstring: '0001',
-      },
-      {
-        probability: state[2].re,
-        bitstring: '0010',
-      }]
+    let dataset = [{}];
+    if (state !== null){
+      dataset = [
+        {
+          probability: state[0].re,
+          bitstring: '000000',
+        },
+        {
+          probability: state[1].re,
+          bitstring: '000001',
+        },
+        {
+          probability: state[2].re,
+          bitstring: '000010',
+        },
+        {
+          probability: state[4].re,
+          bitstring: '000100',
+        },
+        {
+          probability: state[8].re,
+          bitstring: '001000',
+        },
+        {
+          probability: state[16].re,
+          bitstring: '010000',
+        },
+        {
+          probability: state[32].re,
+          bitstring: '100000',
+        }]
+    }
   
     return (
       <section className="states">
@@ -183,6 +206,7 @@ function handleDragEnd(event:any){
         xAxis={[
           { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement },
         ]}
+        grid={{ horizontal: true }}
         {...chartSetting}
       />
       </section>
@@ -211,4 +235,31 @@ function handleDragEnd(event:any){
 
 export default App;
 
+function toBitString(num: number): string {
+  // Ensure num is a non-negative integer
+  if (num < 0 || !Number.isInteger(num)) {
+      throw new Error("Input must be a non-negative integer");
+  }
 
+  // If num is 0, return "000000"
+  if (num === 0) {
+      return "000000";
+  }
+
+  let result: string = "";
+
+  // Convert num to binary representation
+  while (num > 0) {
+      // Append the least significant bit of num to the result
+      result = (num & 1) + result;
+      // Right shift num by 1 bit
+      num >>= 1;
+  }
+
+  // Pad the result with leading zeros to make it 6 bits long
+  while (result.length < 6) {
+      result = "0" + result;
+  }
+
+  return result;
+}
