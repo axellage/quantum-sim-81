@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect } from 'react';
+import React from 'react';
 import './slot.css';
 import './toolbar.css';
 import PlacedGate from './placedGate';

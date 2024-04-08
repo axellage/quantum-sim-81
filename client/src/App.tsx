@@ -5,12 +5,11 @@ import Toolbar from './toolbar';
 import {DndContext} from '@dnd-kit/core';
 import axios from 'axios';
 import Circuitboard from './circuitboard';
-import './slider.css'
-
+import './slider.css';
 
 import { BarChart } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { DatasetType } from '@mui/x-charts/models/seriesType/config';
+import { transform } from 'typescript';
 
 function App() {
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
@@ -62,12 +61,12 @@ function App() {
 function handleDragEnd(event:any){
     const {active, over} = event;
     console.log(over.id[0]);
-    if(active.id == "C_down"){
-      if(over.id[0] == 5){
+    if(active.id === "C_down"){
+      if(over.id[0] === 5){
         alert("No gate to control.");
         return;
       }
-      if(circuit[parseInt(over.id[0]) + 1][parseInt(over.id[1])] == "I"){
+      if(circuit[parseInt(over.id[0]) + 1][parseInt(over.id[1])] === "I"){
         alert("No gate to control.");
         return;
       }
@@ -106,7 +105,7 @@ function handleDragEnd(event:any){
   function convertToOldVersion(newCircuit:string[][]){
     for(let i = 0; i < newCircuit.length - 1; i++){
       for(let j = 0; j < newCircuit[0].length; j++){
-        if(newCircuit[i][j] == "C_down"){
+        if(newCircuit[i][j] === "C_down"){
           newCircuit[i][j] = "CNOT-1";
           newCircuit[i + 1][j] = "CNOT-2";
           //newCircuit = swapMatrixItem(newCircuit, i + 1, j, "CNOT-2")
@@ -128,15 +127,6 @@ function handleDragEnd(event:any){
 
   function States() {
     let state = getState(stepNumber) ? JSON.parse(getState(stepNumber)) : null
-    if (state !== null){
-      console.log("hej")
-      console.log(state[0].re)
-      console.log("okej")
-      console.log(toBitString(10))
-      console.log(toBitString(0))
-      console.log(toBitString(63))
-    }
-
 
     const valueFormatter = (value:any) => `${value}`;
 
@@ -146,73 +136,45 @@ function handleDragEnd(event:any){
           label: 'Probability', min: 0, max: 1,
         },
       ],
-      series: [{ dataKey: 'probability', label: 'Probabilities', valueFormatter }],
+      series: [{ dataKey: 'probability', valueFormatter }],
       height: 300,
       sx: {
-        [`& .${axisClasses.directionY} .${axisClasses.label}`]: {
+        [`& .${axisClasses.directionY} .${axisClasses.label} `]: {
           transform: 'translateX(-10px)',
+          fill: '#ffffff'
         },
-      },
+        [`& .${axisClasses.left} .${axisClasses.tickLabel} `]: {
+          fill: '#ffffff'
+        },
+        [`& .${axisClasses.directionY} .${axisClasses.line}`]: {
+          stroke: '#ffffff'
+        },
+        [`& .${axisClasses.directionX} .${axisClasses.line}`]: {
+          stroke: '#ffffff'
+        },
+        [`& .${axisClasses.directionY} .${axisClasses.tick}`]: {
+          stroke: '#ffffff'
+        },
+        [`& .${axisClasses.directionX} .${axisClasses.tick}`]: {
+          stroke: '#ffffff',
+        },
+        [`& .${axisClasses.directionX} .${axisClasses.tickLabel}`]: {
+          transform: 'rotate(-90deg) translateX(-35px) translateY(-10px)',
+          fill: '#ffffff'
+        }
+      }
     };
 
     const tickPlacement = 'middle';
     const tickLabelPlacement = 'middle';
 
-    //TODO:
-    {/*let probabilities: number[] = getProbabilities();
-
-    function getProbabilities(): number[] {
-      throw new Error('Function not implemented.');
-    } */}
-
     let dataset = [{}];
     if (state !== null){
-      {/*dataset = [
-        {
-          probability: state[0].re,
-          bitstring: '000000',
-        },
-        {
-          probability: state[1].re,
-          bitstring: '000001',
-        },
-        {
-          probability: state[2].re,
-          bitstring: '000010',
-        },
-        {
-          probability: state[4].re,
-          bitstring: '000100',
-        },
-        {
-          probability: state[8].re,
-          bitstring: '001000',
-        },
-        {
-          probability: state[16].re,
-          bitstring: '010000',
-        },
-        {
-          probability: state[32].re,
-          bitstring: '100000',
-        }] */}
 
         dataset = getProbabilities(state);
     }
 
-    function getProbabilities(stateList: {re:number, im:number}[]): {}[] {
-      let probabilities: {probability: number, bitstring: string}[] = [];
-      let bitstring: string;
-      let probability: number;
-
-      for (let i = 0; i < stateList.length; i++) {
-        bitstring = toBitString(i);
-        probability = (stateList[i].re)*(stateList[i].re);
-        probabilities.push({probability: probability, bitstring: `${bitstring}`})
-      }
-
-      return probabilities;
-    }
+    
   
     return (
       <section className="states">
@@ -220,8 +182,12 @@ function handleDragEnd(event:any){
         <BarChart
         dataset={dataset}
         xAxis={[
-          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement },
+          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement},
         ]}
+        margin={{
+          top: 10,
+          bottom: 60,
+        }}
         grid={{ horizontal: true }}
         {...chartSetting}
       />
@@ -250,6 +216,20 @@ function handleDragEnd(event:any){
 
 
 export default App;
+
+function getProbabilities(stateList: {re:number, im:number}[]): {}[] {
+  let probabilities: {probability: number, bitstring: string}[] = [];
+  let bitstring: string;
+  let probability: number;
+
+  for (let i = 0; i < stateList.length; i++) {
+    bitstring = toBitString(i);
+    probability = (stateList[i].re)*(stateList[i].re);
+    probabilities.push({probability: probability, bitstring: `${bitstring}`})
+  }
+
+  return probabilities;
+}
 
 function toBitString(num: number): string {
 

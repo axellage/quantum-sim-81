@@ -1,4 +1,4 @@
-import React, { useState, ReactNode, useEffect } from 'react';
+import React from 'react';
 import './gate.css';
 import {useDraggable} from '@dnd-kit/core';
 import {CSS} from '@dnd-kit/utilities';
@@ -9,8 +9,8 @@ function Gate(props:any) {
       });
       const style = {
         transform: CSS.Translate.toString(transform),
-        width: 50,
-        height: 50
+        width: 45,
+        height: 45
         
       };
       
