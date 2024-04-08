@@ -37,6 +37,7 @@ pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
             let mut operands: Vec<usize> = vec![i];
             if step != 0 {
                 operands = find_qubits_that_are_entangled_to_qubit(i, return_list.circuit[step - 1].clone())
+                gate = expand_gate_to_entangled_qubits();
             }
             current_gates.push(QuantumGateWrapper { qubits: operands, gate: gate });
         }
