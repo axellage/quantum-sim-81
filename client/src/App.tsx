@@ -9,7 +9,9 @@ import './slider.css';
 
 import { BarChart } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { transform } from 'typescript';
+import { legendClasses } from '@mui/x-charts';
+import { text } from 'node:stream/consumers';
+import { colors } from '@material-ui/core';
 
 function App() {
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
@@ -133,10 +135,10 @@ function handleDragEnd(event:any){
     const chartSetting = {
       yAxis: [
         {
-          label: 'Probability', min: 0, max: 1,
+         min: 0, max: 1,
         },
       ],
-      series: [{ dataKey: 'probability', valueFormatter }],
+      series: [{ dataKey: 'probability', valueFormatter, label: 'Probability'}],
       height: 300,
       sx: {
         [`& .${axisClasses.directionY} .${axisClasses.label} `]: {
@@ -159,8 +161,11 @@ function handleDragEnd(event:any){
           stroke: '#ffffff',
         },
         [`& .${axisClasses.directionX} .${axisClasses.tickLabel}`]: {
-          transform: 'rotate(-90deg) translateX(-35px) translateY(-10px)',
+          transform: 'rotate(-90deg) translateX(-35px) translateY(-13px)',
           fill: '#ffffff'
+        },
+        [`& .${legendClasses.root}`]: {
+          color: '#ffffff'
         }
       }
     };
@@ -182,13 +187,14 @@ function handleDragEnd(event:any){
         <BarChart
         dataset={dataset}
         xAxis={[
-          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement},
+          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement, tickLabelInterval: () => true},
         ]}
         margin={{
           top: 10,
           bottom: 60,
         }}
         grid={{ horizontal: true }}
+        tooltip={{trigger: 'item'}}
         {...chartSetting}
       />
       </section>
@@ -224,7 +230,7 @@ function getProbabilities(stateList: {re:number, im:number}[]): {}[] {
 
   for (let i = 0; i < stateList.length; i++) {
     bitstring = toBitString(i);
-    probability = (stateList[i].re)*(stateList[i].re);
+    probability = Math.round(((stateList[i].re)*(stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
     probabilities.push({probability: probability, bitstring: `${bitstring}`})
   }
 
