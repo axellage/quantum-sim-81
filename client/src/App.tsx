@@ -19,7 +19,13 @@ function App() {
   // Initializing this because it complains about type otherwise, there is probably a better way to do it.
   const [states, setStates] = useState([{"step":0, "state":[]}]);
 
-  const [stepNumber, setStepNumber] = useState(4)
+  const [stepNumber, setStepNumber] = useState(4);
+  const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
+
+  const changeGraph = (e:any) => {
+    setDisplayedGraph(JSON.stringify(e.target!.value));
+    
+  }
   const onChange = (e:any) => {
     setStepNumber(e.target!.value)
   }
@@ -53,7 +59,11 @@ function App() {
             <p>4</p>
           </div>
         </div>
-        <States />
+        <select name="dropdown"  onChange={changeGraph}>
+            <option id="0" >Probabilities</option>
+            <option id="1" >Statevectors</option>
+        </select>
+        <States dispGraph={displayedGraph}/>
       </DndContext>
     </div>
   );
@@ -127,8 +137,9 @@ function handleDragEnd(event:any){
     return allStates[step];
   }
 
-  function States() {
+  function States({ dispGraph } : {dispGraph: string}) {
     let state = getState(stepNumber) ? JSON.parse(getState(stepNumber)) : null
+    console.log(dispGraph)
 
     const valueFormatter = (value:any) => `${value}`;
 
@@ -176,7 +187,7 @@ function handleDragEnd(event:any){
     let dataset = [{}];
     if (state !== null){
 
-        dataset = getProbabilities(state);
+        dataset = getStatesOrProbabilities(true, state);
     }
 
     
@@ -192,6 +203,13 @@ function handleDragEnd(event:any){
         margin={{
           top: 10,
           bottom: 60,
+        }}
+        slotProps={{
+          legend : {
+            labelStyle : {
+              fill: '#ffffff'
+            }
+          }
         }}
         grid={{ horizontal: true }}
         tooltip={{trigger: 'item'}}
@@ -223,18 +241,30 @@ function handleDragEnd(event:any){
 
 export default App;
 
-function getProbabilities(stateList: {re:number, im:number}[]): {}[] {
+function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im:number}[]): {}[] {
   let probabilities: {probability: number, bitstring: string}[] = [];
+  let statevecs: {statevec: number, bitstring: string}[] = [];
+  let statevec: number;
   let bitstring: string;
   let probability: number;
 
-  for (let i = 0; i < stateList.length; i++) {
-    bitstring = toBitString(i);
-    probability = Math.round(((stateList[i].re)*(stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
-    probabilities.push({probability: probability, bitstring: `${bitstring}`})
+  if(returnProb) {
+    for (let i = 0; i < stateList.length; i++) {
+      bitstring = toBitString(i);
+      probability = Math.round(((stateList[i].re)*(stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      probabilities.push({probability: probability, bitstring: `${bitstring}`}) 
+    }
+    return probabilities;
+  } else {
+    for (let i = 0; i < stateList.length; i++) {
+      bitstring = toBitString(i);
+      statevec = Math.round(((stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      statevecs.push({statevec: statevec, bitstring: `${bitstring}`})
+    }
+    return statevecs;
   }
 
-  return probabilities;
+  
 }
 
 function toBitString(num: number): string {
