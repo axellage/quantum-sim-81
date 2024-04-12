@@ -107,3 +107,17 @@ input[type=range]:focus::-ms-fill-upper {
   background: #D4D4D4;
 }
 
+.dropdown{
+  background-color: transparent;
+  color: white;
+  border-width: 0;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 1rem;
+}
+
+.option {
+  background-color: #282c34;
+  border: none;
+}
+

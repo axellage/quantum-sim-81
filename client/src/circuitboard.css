@@ -1,14 +1,7 @@
-.Circuitboard {
-  background-color: #22252b;
-  padding: 1rem;
-  padding-left: 4rem;
-  
-}
-
 .circuit {
   max-height: calc(7 * 4rem); /* Adjust as needed based on the height of a single ket-line */
   background-color: #22252b;
-  padding-left: 1rem;
+  padding: 1rem;
 }
 
 .qubitLine {

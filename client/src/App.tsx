@@ -7,11 +7,10 @@ import axios from 'axios';
 import Circuitboard from './circuitboard';
 import './slider.css';
 
-import { BarChart } from '@mui/x-charts/BarChart';
+import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { legendClasses } from '@mui/x-charts';
-import { text } from 'node:stream/consumers';
-import { colors } from '@material-ui/core';
+
 
 function App() {
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
@@ -23,7 +22,7 @@ function App() {
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
 
   const changeGraph = (e:any) => {
-    setDisplayedGraph(JSON.stringify(e.target!.value));
+    setDisplayedGraph(e.target!.value);
     
   }
   const onChange = (e:any) => {
@@ -59,9 +58,9 @@ function App() {
             <p>4</p>
           </div>
         </div>
-        <select name="dropdown"  onChange={changeGraph}>
-            <option id="0" >Probabilities</option>
-            <option id="1" >Statevectors</option>
+        <select className="dropdown"  onChange={changeGraph}>
+            <option className='option' id="0" >Probabilities</option>
+            <option className='option' id="1" >State vectors</option>
         </select>
         <States dispGraph={displayedGraph}/>
       </DndContext>
@@ -139,9 +138,33 @@ function handleDragEnd(event:any){
 
   function States({ dispGraph } : {dispGraph: string}) {
     let state = getState(stepNumber) ? JSON.parse(getState(stepNumber)) : null
-    console.log(dispGraph)
+    console.log("hejsan" + dispGraph)
+
+    let seriesLabel: string;
+    let seriesDatakey: string;
+    let dataColor: string;
+
+    let dataset = [{}];
+
+    if(dispGraph === "Probabilities") {
+      seriesLabel = 'Probability';
+      seriesDatakey = 'probability';
+      dataColor = '#08c49f';
+      if (state !== null){
+        dataset = getStatesOrProbabilities(true, state);
+      }
+    }else {
+      seriesLabel = 'Amplitude';
+      seriesDatakey = 'amplitude';
+      dataColor = '#a208c4'
+      if (state !== null){
+        dataset = getStatesOrProbabilities(false, state);
+      }
+    }
 
     const valueFormatter = (value:any) => `${value}`;
+
+
 
     const chartSetting = {
       yAxis: [
@@ -149,7 +172,7 @@ function handleDragEnd(event:any){
          min: 0, max: 1,
         },
       ],
-      series: [{ dataKey: 'probability', valueFormatter, label: 'Probability'}],
+      series: [{ dataKey: `${seriesDatakey}`, valueFormatter, label: `${seriesLabel}`}],
       height: 300,
       sx: {
         [`& .${axisClasses.directionY} .${axisClasses.label} `]: {
@@ -175,8 +198,11 @@ function handleDragEnd(event:any){
           transform: 'rotate(-90deg) translateX(-35px) translateY(-13px)',
           fill: '#ffffff'
         },
-        [`& .${legendClasses.root}`]: {
-          color: '#ffffff'
+        [`& .${legendClasses.mark}`]: {
+          fill: `${dataColor}`
+        },
+        [`& .${barElementClasses.root}`]: {
+          fill: `${dataColor}`
         }
       }
     };
@@ -184,11 +210,7 @@ function handleDragEnd(event:any){
     const tickPlacement = 'middle';
     const tickLabelPlacement = 'middle';
 
-    let dataset = [{}];
-    if (state !== null){
-
-        dataset = getStatesOrProbabilities(true, state);
-    }
+    
 
     
   
@@ -243,8 +265,8 @@ export default App;
 
 function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im:number}[]): {}[] {
   let probabilities: {probability: number, bitstring: string}[] = [];
-  let statevecs: {statevec: number, bitstring: string}[] = [];
-  let statevec: number;
+  let statevecs: {amplitude: number, bitstring: string}[] = [];
+  let amplitude: number;
   let bitstring: string;
   let probability: number;
 
@@ -258,8 +280,8 @@ function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im
   } else {
     for (let i = 0; i < stateList.length; i++) {
       bitstring = toBitString(i);
-      statevec = Math.round(((stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
-      statevecs.push({statevec: statevec, bitstring: `${bitstring}`})
+      amplitude = Math.round(((stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      statevecs.push({amplitude: amplitude, bitstring: `${bitstring}`})
     }
     return statevecs;
   }
