@@ -26,6 +26,11 @@ pub struct ParsedCircuit {
     pub circuit: Vec<Vec<QuantumGateWrapper>>,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct EntangledQubitGroup {
+    pub qubits: Vec<usize>,
+}
+
 pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
     println!("{:?}", grid);
 
@@ -39,19 +44,7 @@ pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
             let gate = grid.circuit[qubit_no][step].as_str();
             let parsed_gate = parse_gate(gate);
 
-            // If size is 0 then qubit is part of a multi qubit gate
-
-            if parsed_gate.size == 0 {
-                let mut prev_gate = current_gates.pop().unwrap();
-                let mut operands = prev_gate.qubits;
-                operands.push(qubit_no);
-
-                prev_gate.qubits = operands;
-
-                current_gates.push(prev_gate);
-            } else {
-                current_gates.push(QuantumGateWrapper { qubits: vec![qubit_no], gate: parsed_gate });
-            }
+            current_gates.push(QuantumGateWrapper { qubits: vec![qubit_no], gate: parsed_gate });
         }
 
         println!("Current gate {:?}", current_gates);
@@ -63,18 +56,11 @@ pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
     // OUTPUT: [[Gates to be combined, Gates to be combined, ...], [Gates to be combined, Gates to be combined, ...], ...]
     println!("COMBINING GATES");
 
-    let updated_steps: Vec<Vec<QuantumGateWrapper>> = vec![initial_gates[0].clone()];
+    let mut updated_steps: Vec<Vec<QuantumGateWrapper>> = vec![initial_gates[0].clone()];
 
     for (step_no, step) in initial_gates.iter().enumerate().skip(1) {
-        let entangled_qubits: Vec<Vec<usize>> = updated_steps[step_no - 1].iter().map(|gate| gate.qubits.clone()).collect();
-
-        println!("Entangled Qubits {:?}", entangled_qubits);
-
-        let mut to_be_merged: Vec<Vec<(QuantumGate, Vec<usize>)>> = vec![vec![(initial_gates[step_no][0].clone().gate, initial_gates[step_no][0].clone().qubits)]];
-
-        for gate in initial_gates[step_no].iter().skip(1) {
-            let gate_qubits = gate.qubits.clone();
-        }
+        let entangled_qubits: Vec<EntangledQubitGroup> = updated_steps[step_no - 1].iter().map(|gate| EntangledQubitGroup{ qubits: gate.qubits.clone()}).collect();
+        updated_steps.push(account_for_entangled_qubits(entangled_qubits.clone(), initial_gates[step_no].clone()));
     }
 
     // Step 3: Combine the gates in each list to get final circuit
@@ -84,13 +70,53 @@ pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
     return_list
 }
 
-fn find_qubits_that_are_entangled_to_qubit(qubit: usize, gates_with_operands_in_previous_step: Vec<QuantumGateWrapper>) -> Vec<usize> {
-    for (index, gate_with_operands) in gates_with_operands_in_previous_step.iter().enumerate() {
-        if gate_with_operands.qubits.contains(&qubit) {
-            return gate_with_operands.qubits.clone();
+fn account_for_entangled_qubits(entangled_qubits_before: Vec<EntangledQubitGroup>, preparsed_gates: Vec<QuantumGateWrapper>) -> Vec<QuantumGateWrapper> {
+    let mut new_combined_gates: Vec<QuantumGateWrapper> = vec![];
+    let mut gate_index = 0;
+    while gate_index < preparsed_gates.clone().len(){
+        let gate = preparsed_gates[gate_index].clone();
+
+        for (operand_no, operand) in gate.qubits.iter().enumerate() {
+            let mut prev_entangled_group = EntangledQubitGroup {qubits: vec![]};
+            let entangled_group: EntangledQubitGroup = find_qubits_that_are_entangled_to_qubit(operand.clone(), entangled_qubits_before.clone());
+            if(entangled_group == prev_entangled_group){
+                continue;
+            }
+            if(entangled_group.qubits[0] == operand.clone()){
+                let mut large_gate: QuantumGate = gate.gate.clone();
+                for (entangled_qubit_no, entangled_qubit) in entangled_group.qubits.iter().enumerate(){
+                    large_gate = large_gate.kronecker(find_gate_that_acts_upon_qubit(entangled_qubit.clone(), preparsed_gates.clone()).gate);
+                    gate_index += 1;
+                }
+                new_combined_gates.push(QuantumGateWrapper { qubits: entangled_group.qubits.clone(), gate: large_gate});
+                prev_entangled_group = entangled_group;
+            }
+            
+        }
+        
+        gate_index += 1;
+    }
+    new_combined_gates
+}
+
+fn find_qubits_that_are_entangled_to_qubit(qubit: usize, entangled_qubit_groups: Vec<EntangledQubitGroup>) -> EntangledQubitGroup {
+    for (index, entangled_group) in entangled_qubit_groups.iter().enumerate() {
+        if entangled_group.qubits.contains(&qubit) {
+            return entangled_group.clone();
         }
     }
-    vec![]
+    panic!("Qubit not found");
+}
+
+fn find_gate_that_acts_upon_qubit(qubit: usize, gates_in_time_step: Vec<QuantumGateWrapper>) -> QuantumGateWrapper {
+    for (gate_no, gate) in gates_in_time_step.iter().enumerate() {
+        for (operand_no, operand) in gate.qubits.iter().enumerate() {
+            if(operand == &qubit){
+                return gate.clone();
+            }
+        }
+    }
+    panic!("Qubit not found in any of the GateWrappers");
 }
 
 fn expand_gate_to_entangled_qubits() -> QuantumGate {
@@ -136,6 +162,40 @@ mod tests {
         let grid = vec![q0, q1];
 
         let circuit = build_circuit_from_data(UnparsedCircuit::from(grid));
+    }
+
+    #[test]
+    fn test__account_for_entangled_qubits__first_two_entangled(){
+        let entangled_groups = vec![
+            EntangledQubitGroup { qubits: vec![0,1] }, 
+            EntangledQubitGroup { qubits: vec![2] }];
+
+        let gates_in_time_step = vec![
+            QuantumGateWrapper { qubits: vec![0], gate: QuantumGate::h_gate()}, 
+            QuantumGateWrapper { qubits: vec![1], gate: QuantumGate::x_gate()}, 
+            QuantumGateWrapper { qubits: vec![2], gate: QuantumGate::i_gate()}];
+        
+        let new_parsed_gates: Vec<QuantumGateWrapper> = account_for_entangled_qubits(entangled_groups, gates_in_time_step);
+        let expected_result: Vec<QuantumGateWrapper> = vec![
+            QuantumGateWrapper { qubits: vec![0, 1], gate: QuantumGate::h_gate().kronecker(QuantumGate::x_gate())}, 
+            QuantumGateWrapper { qubits: vec![2], gate: QuantumGate::i_gate()}];
+    }
+
+    #[test]
+    fn test__account_for_entangled_qubits__last_two_entangled(){
+        let entangled_groups = vec![
+            EntangledQubitGroup { qubits: vec![0] }, 
+            EntangledQubitGroup { qubits: vec![1,2] }];
+
+        let gates_in_time_step = vec![
+            QuantumGateWrapper { qubits: vec![0], gate: QuantumGate::h_gate()}, 
+            QuantumGateWrapper { qubits: vec![1], gate: QuantumGate::x_gate()}, 
+            QuantumGateWrapper { qubits: vec![2], gate: QuantumGate::i_gate()}];
+        
+        let new_parsed_gates: Vec<QuantumGateWrapper> = account_for_entangled_qubits(entangled_groups, gates_in_time_step);
+        let expected_result: Vec<QuantumGateWrapper> = vec![
+            QuantumGateWrapper { qubits: vec![0], gate: QuantumGate::h_gate()}, 
+            QuantumGateWrapper { qubits: vec![1,2], gate: QuantumGate::x_gate().kronecker(QuantumGate::i_gate())}];
     }
 
     #[test]
