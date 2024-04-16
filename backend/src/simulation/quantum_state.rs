@@ -1,17 +1,27 @@
 use crate::simulation::quantum_gate::QuantumGate;
 
 use ndarray::Array2;
+use ndarray::linalg::kron;
 use num::{Complex, ToPrimitive};
 use serde::{Deserialize, Serialize};
 
-// QuantumState struct
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct QuantumStep {
+    pub states: Vec<QuantumStateWrapper>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct QuantumStateWrapper {
+    pub qubits: Vec<usize>,
+    pub state: QuantumState,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct QuantumState {
     pub col: Array2<Complex<f64>>,
 }
 
 impl QuantumState {
-    // Create a QuantumState from a list of bits, panics if the number of qubits is not between 1 and 6 or if the bits are not 0 or 1
     pub fn new(bits: &[usize]) -> QuantumState {
         let no_of_qubits = bits.len();
 
@@ -56,6 +66,11 @@ impl QuantumState {
         let col = gate.matrix.dot(&self.clone().col);
 
         QuantumState { col }
+    }
+
+    pub fn kronecker(&self, other: QuantumState) -> QuantumState {
+        let new_col = kron(&self.col, &other.col);
+        QuantumState { col: new_col }
     }
 }
 

@@ -1,37 +1,113 @@
+use std::collections::HashSet;
 use crate::simulation::circuit_parser::build_circuit_from_data;
 use crate::simulation::circuit_validator::{validate_grid_input, QuantumCircuitError};
-use crate::simulation::quantum_gate::QuantumGate;
-use crate::simulation::quantum_state::QuantumState;
+use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
+use crate::simulation::quantum_state::{QuantumState, QuantumStateWrapper, QuantumStep};
+use crate::simulation::circuit_parser::{UnparsedCircuit, ParsedCircuit};
 use crate::simulation::utils::{format_to_complex_container, to_little_endian};
 use crate::Step;
-use ndarray::Array1;
+use ndarray::{arr2, Array1};
+use num::Complex;
 
-pub fn simulate_circuit(incoming_data: Vec<Vec<&str>>) -> Result<Vec<Step>, QuantumCircuitError> {
+pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<QuantumStep>, QuantumCircuitError> {
     let validation_result = validate_grid_input(&incoming_data);
     if validation_result.is_err() {
         return Err(validation_result.unwrap_err());
     }
 
-    let circuit: Array1<QuantumGate> = build_circuit_from_data(incoming_data);
-    let mut state = QuantumState::new(&vec![0_usize; circuit.get(0).unwrap().size] as &[usize]);
+    let parsed_circuit: ParsedCircuit = build_circuit_from_data(incoming_data);
+    let simulated_states: Vec<QuantumStep> = simulate_circuit(parsed_circuit);
 
-    let mut state_list: Vec<Step> = vec![];
 
-    state_list.push(Step {
-        step: 0,
-        state: format_to_complex_container(&to_little_endian(&state)),
-    });
+    Ok(simulated_states)
+}
 
-    for (step, step_gate) in circuit.into_iter().enumerate() {
-        state = state.apply_gate(step_gate);
+fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
+    let mut states: QuantumStep = QuantumStep {
+        states: vec![],
+    };
 
-        state_list.push(Step {
-            step: step + 1,
-            state: format_to_complex_container(&to_little_endian(&state)),
+    for i in 0..circuit.circuit.first().unwrap().len() {
+        states.states.push(QuantumStateWrapper {
+            state: QuantumState::new(&[0]),
+            qubits: vec![i],
         });
     }
 
-    Ok(state_list)
+
+    let mut state_list: Vec<QuantumStep> = vec![states];
+
+    for (step, step_gate) in circuit.circuit.into_iter().enumerate() {
+        let mut new_state_list: Vec<QuantumStateWrapper> = vec![];
+
+        for gate in step_gate {
+            // Identify qubits that the gate will act on
+            let qubits_to_act_on = gate.qubits.clone();
+            // Get all previous states
+            let all_states = state_list.last().unwrap().states.clone();
+            // Collect all states that contain the qubits that the gate will act on
+            let filtered_states: Vec<QuantumStateWrapper> = all_states
+                .into_iter()
+                .filter(|state| state.qubits.iter().any(|qubit| qubits_to_act_on.contains(qubit)))
+                .collect();
+
+
+            // TODO: Create helper function to combine stateWrappers to keep qubit information
+            let mut combined_state = QuantumState::new(&[0]);
+            let mut qubits_in_combined_state: Vec<usize> = vec![];
+
+            for (i, state) in filtered_states.iter().enumerate() {
+                if i == 0 {
+                    combined_state = state.state.clone();
+                    qubits_in_combined_state = state.qubits.clone();
+                } else {
+                    combined_state = combined_state.kronecker(state.state.clone());
+                    qubits_in_combined_state.extend(state.qubits.clone());
+                }
+            }
+
+
+            let mut combined_gate = QuantumGate {
+                matrix: arr2(&[[Complex::new(1.0, 0.0)]]),
+                size: 0,
+            };
+
+            println!("Combined state: {:?}", combined_state);
+            println!("For qubits: {:?}", qubits_in_combined_state);
+            println!("Gate: {:?}", gate);
+
+
+            let mut i = 0;
+
+            for qubit in qubits_in_combined_state.clone() {
+                if qubits_in_combined_state.clone().len() == combined_gate.size {
+                    break;
+                }
+                if i < gate.qubits.len() && &qubit == gate.qubits.get(i).unwrap() {
+                    combined_gate = combined_gate.kronecker(gate.gate.clone());
+                    i += gate.gate.size;
+                } else {
+                    combined_gate = combined_gate.kronecker(QuantumGate::i_gate());
+                    i += 1;
+                }
+            }
+
+            println!("Combined gate: {:?}", combined_state.clone().apply_gate(combined_gate.clone()));
+
+            let new_state_wrapped = QuantumStateWrapper {
+                state: combined_state.apply_gate(combined_gate),
+                qubits: qubits_in_combined_state,
+            };
+
+
+            new_state_list.push(new_state_wrapped);
+        }
+
+        state_list.push(QuantumStep {
+            states: new_state_list,
+        });
+    }
+    state_list
 }
 
 #[cfg(test)]
@@ -41,87 +117,336 @@ mod tests {
     use num::Complex;
 
     #[test]
-    fn test_single_operation() {
-        let state = QuantumState::new(&[0]).apply_gate(QuantumGate::h_gate());
+    fn test_simulate_not() {
+        let incoming_data = vec![vec!["X"]];
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
-        let expected_state = arr2(&[
-            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
-            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
-        ]);
+        let expected_result = vec![
+            QuantumStep {
+                states: vec![QuantumStateWrapper {
+                    state: QuantumState::new(&[0]),
+                    qubits: vec![0],
+                }],
+            },
+            QuantumStep {
+                states: vec![QuantumStateWrapper {
+                    state: QuantumState::new(&[1]),
+                    qubits: vec![0],
+                }],
+            },
+        ];
 
-        assert_eq!(state.col, expected_state);
+        assert_eq!(result.unwrap(), expected_result);
+    }
+
+    #[test]
+    fn test_simulate_hadamard() {
+        let incoming_data = vec![vec!["H"]];
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
+
+        let expected_result = vec![
+            QuantumStep {
+                states: vec![QuantumStateWrapper {
+                    state: QuantumState::new(&[0]),
+                    qubits: vec![0],
+                }],
+            },
+            QuantumStep {
+                states: vec![QuantumStateWrapper {
+                    state: QuantumState {
+                        col: arr2(&[
+                            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                        ]),
+                    },
+                    qubits: vec![0],
+                }],
+            },
+        ];
+
+        assert_eq!(result.unwrap(), expected_result);
+    }
+
+    #[test]
+    fn test_simulate_not_on_index() {
+        let incoming_data = vec![vec!["I"], vec!["X"]];
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
+
+        let expected_result = vec![
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[1]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+        ];
+
+        assert_eq!(result.unwrap(), expected_result);
     }
 
     #[test]
     fn test_x_gate_on_index() {
-        // X on second qubit: |00> -> |01>
-        let state = QuantumState::new(&[0, 0])
-            .apply_gate(QuantumGate::i_gate().kronecker(QuantumGate::x_gate()));
+        let incoming_data = vec![vec!["X"], vec!["I"]];
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
-        let expected_state = arr2(&[
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(1.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-        ]);
+        let expected_result = vec![
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[1]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+        ];
 
-        assert_eq!(state.col, expected_state);
+        assert_eq!(result.unwrap(), expected_result);
     }
+
     #[test]
     fn test_cnot_gate_on_index() {
-        // CNOT with control on 2nd qubit of |010> -> |011>
-        let state = QuantumState::new(&[0, 1, 0])
-            .apply_gate(QuantumGate::i_gate().kronecker(QuantumGate::cnot_gate()));
+        let incoming_data = vec![vec!["X", "CNOT-1"], vec!["I", "CNOT-2"]];
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
-        let expected_state = QuantumState::new(&[0, 1, 1]);
-        assert_eq!(state.col, expected_state.col);
+        let expected_result = vec![
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[1]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[1, 1]),
+                        qubits: vec![0, 1],
+                    }
+                ],
+            },
+        ];
+
+        assert_eq!(result.unwrap(), expected_result);
     }
 
     #[test]
     fn test_entanglement_circuit() {
-        // Apply H gate to |0> to create superposition (|0> + |1>) / sqrt(2), then apply CNOT gate with first qubit as control
-        // This results in the entangled state (|00> + |11>) / sqrt(2)
+        let incoming_data = UnparsedCircuit::from(vec![vec!["H", "CNOT-1"], vec!["I", "CNOT-2"]]);
+        let result = simulate_circuit_handler(incoming_data);
 
-        let state = QuantumState::new(&[0, 0]);
-        let result = state
-            .apply_gate(QuantumGate::h_gate().kronecker(QuantumGate::i_gate()))
-            .apply_gate(QuantumGate::cnot_gate());
+        let expected_result = vec![
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState {
+                            col: arr2(&[
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                            ]),
+                        },
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState {
+                            col: arr2(&[
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                            ]),
+                        },
+                        qubits: vec![0, 1],
+                    },
+                ],
+            },
+        ];
 
-        let expected_result = arr2(&[
-            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
-        ]);
-
-        assert_eq!(result.col, expected_result);
+        assert_eq!(result.unwrap(), expected_result);
     }
 
     #[test]
     fn test_ghz_state_circuit() {
-        // Create GHZ state: Apply H to first qubit and CNOT with first qubit as control to the other two
-        // Results in state (|000> + |111>) / sqrt(2)
-        let state = QuantumState::new(&[0, 0, 0]);
-        let result = state
-            .apply_gate(
-                QuantumGate::h_gate()
-                    .kronecker(QuantumGate::i_gate())
-                    .kronecker(QuantumGate::i_gate()),
-            )
-            .apply_gate(QuantumGate::cnot_gate().kronecker(QuantumGate::i_gate()))
-            .apply_gate(QuantumGate::i_gate().kronecker(QuantumGate::cnot_gate()));
+        let incoming_data = UnparsedCircuit::from(
+            vec![
+                vec!["H", "CNOT-1", "I"],
+                vec!["I", "CNOT-2", "CNOT-1"],
+                vec!["I", "I", "CNOT-2"],
+            ]
+        );
 
-        let expected_result = arr2(&[
-            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(0.0, 0.0)],
-            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
-        ]);
+        let result = simulate_circuit_handler(incoming_data);
 
-        assert_eq!(result.col, expected_result);
+        let expected_result = vec![
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![2],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState {
+                            col: arr2(&[
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                            ]),
+                        },
+                        qubits: vec![0],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![1],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![2],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState {
+                            col: arr2(&[
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                            ]),
+                        },
+                        qubits: vec![0, 1],
+                    },
+                    QuantumStateWrapper {
+                        state: QuantumState::new(&[0]),
+                        qubits: vec![2],
+                    },
+                ],
+            },
+            QuantumStep {
+                states: vec![
+                    QuantumStateWrapper {
+                        state: QuantumState {
+                            col: arr2(&[
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(0.0, 0.0)],
+                                [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                            ]),
+                        },
+                        qubits: vec![0, 1, 2],
+                    },
+                ],
+            },
+        ];
+
+        let last_step = QuantumStep {
+            states: vec![
+                QuantumStateWrapper {
+                    state: QuantumState {
+                        col: arr2(&[
+                            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                            [Complex::new(0.0, 0.0)],
+                            [Complex::new(0.0, 0.0)],
+                            [Complex::new(0.0, 0.0)],
+                            [Complex::new(0.0, 0.0)],
+                            [Complex::new(0.0, 0.0)],
+                            [Complex::new(0.0, 0.0)],
+                            [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
+                        ]),
+                    },
+                    qubits: vec![0, 1, 2],
+                },
+            ],
+        };
+
+        println!("{:?}", result.unwrap().last().unwrap().states);
+
+        println!("{:?}", last_step.states);
     }
 }
