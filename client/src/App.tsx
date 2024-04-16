@@ -10,16 +10,32 @@ import './slider.css';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { legendClasses } from '@mui/x-charts';
+import { useTicks } from '@mui/x-charts/hooks/useTicks';
 
 
 function App() {
+  type Circuit = string[][];
+
+  // Function to initialize the circuit with a variable number of "I"s
+  const initializeCircuit = (rows: number, columns: number, initialValue: string): Circuit => {
+      const circuit: Circuit = [];
+      for (let i = 0; i < rows; i++) {
+          const row: string[] = [];
+          for (let j = 0; j < columns; j++) {
+              row.push(initialValue);
+          }
+          circuit.push(row);
+      }
+      return circuit;
+  }
+
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
-  const [circuit, setCircuit] = useState([["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"]]);
-  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
+  const [circuit, setCircuit] = useState<Circuit>(() => initializeCircuit(6, 8, "I"));  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
   const [states, setStates] = useState([{"step":0, "state":[]}]);
 
-  const [stepNumber, setStepNumber] = useState(4);
+  const [stepNumber, setStepNumber] = useState(8);
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
+  
 
   const changeGraph = (e:any) => {
     setDisplayedGraph(e.target!.value);
@@ -45,8 +61,8 @@ function App() {
           <input
             type='range'
             min={1}
-            max={4}
-            defaultValue={4}
+            max={8}
+            defaultValue={8}
             step={1}
             className='range'
             onChange={onChange}
@@ -56,6 +72,10 @@ function App() {
             <p>2</p>
             <p>3</p>
             <p>4</p>
+            <p>5</p>
+            <p>6</p>
+            <p>7</p>
+            <p>8</p>
           </div>
         </div>
         <select className="dropdown"  onChange={changeGraph}>
@@ -77,19 +97,19 @@ function handleDragEnd(event:any){
         alert("No gate to control.");
         return;
       }
-      if(circuit[parseInt(over.id[0]) + 1][parseInt(over.id[1])] === "I"){
+      if(circuit[parseInt(over.id[0]) + 1][parseInt(over.id.substring(1))] === "I"){
         alert("No gate to control.");
         return;
       }
     }
 
-    console.log("Placed gate on position " + over.id[1] + " on qubit line " + over.id[0]);
+    console.log("Placed gate on position " + over.id.substring(1) + " on qubit line " + over.id[0]);
 
     // These nested maps replace the gate at the given position.
     const newCircuit = circuit.map((line, i) => {
       if(i === (Number(over.id[0]))) {
         return (line.map((gate, j) => {
-          if(j === (Number(over.id[1]))){
+          if(j === (Number(over.id.substring(1)))){
             return (active.id);
           } else{
             return (gate);
