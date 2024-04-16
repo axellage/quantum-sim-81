@@ -74,28 +74,28 @@ fn simulate_circuit_handler(
 }
 
 #[derive(Serialize, Deserialize)]
-struct PingMessage {
-    message: String,
+pub struct DefaultCircuitsResponse {
+    circuits: Vec<Vec<Vec<String>>>,
 }
 
-#[derive(Serialize, Deserialize)]
-struct PingResponse {
-    message: String,
-}
-
-#[post("/ping", format = "json", data = "<ping_message>")]
-fn ping_handler(ping_message: Json<PingMessage>) -> Json<PingResponse> {
-    let data: PingMessage = ping_message.into_inner();
-
-    if data.message == "ping" {
-        Json(PingResponse {
-            message: "pong".parse().unwrap(),
-        })
-    } else {
-        Json(PingResponse {
-            message: "Huh?".parse().unwrap(),
-        })
+impl DefaultCircuitsResponse {
+    pub fn new() -> Self {
+        DefaultCircuitsResponse {
+            circuits: vec![Self::bell_state_circuit()]
+        }
     }
+
+    fn bell_state_circuit() -> Vec<Vec<String>> {
+        let q0 = vec!["X".to_string(), "CNOT-1".to_string()];
+        let q1 = vec!["I".to_string(), "CNOT-2".to_string()];
+
+        vec![q0, q1]
+    }
+}
+
+#[get("/default-circuits")]
+fn get_default_circuits() -> Json<DefaultCircuitsResponse> {
+    Json(DefaultCircuitsResponse::new())
 }
 
 #[launch]
@@ -112,7 +112,7 @@ fn rocket() -> _ {
 
     rocket::build()
         .attach(cors.to_cors().unwrap())
-        .mount("/", routes![simulate_circuit_handler, ping_handler])
+        .mount("/", routes![simulate_circuit_handler, get_default_circuits])
 }
 
 #[cfg(test)]
