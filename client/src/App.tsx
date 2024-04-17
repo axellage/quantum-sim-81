@@ -30,10 +30,10 @@ function App() {
   }
 
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
-  const [circuit, setCircuit] = useState<Circuit>(() => initializeCircuit(6, 8, "I"));  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
+  const [circuit, setCircuit] = useState<Circuit>(() => initializeCircuit(6, 25, "I"));  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
   const [states, setStates] = useState([{"step":0, "state":[]}]);
 
-  const [stepNumber, setStepNumber] = useState(8);
+  const [stepNumber, setStepNumber] = useState(25);
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
   
 
@@ -61,8 +61,8 @@ function App() {
           <input
             type='range'
             min={1}
-            max={8}
-            defaultValue={8}
+            max={25}
+            defaultValue={25}
             step={1}
             className='range'
             onChange={onChange}
@@ -76,6 +76,23 @@ function App() {
             <p>6</p>
             <p>7</p>
             <p>8</p>
+            <p>9</p>
+            <p>10</p>
+            <p>11</p>
+            <p>12</p>
+            <p>13</p>
+            <p>14</p>
+            <p>15</p>
+            <p>16</p>
+            <p>17</p>
+            <p>18</p>
+            <p>19</p>
+            <p>20</p>
+            <p>21</p>
+            <p>22</p>
+            <p>23</p>
+            <p>24</p>
+            <p>25</p>
           </div>
         </div>
         <select className="dropdown"  onChange={changeGraph}>

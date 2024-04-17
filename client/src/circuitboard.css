@@ -57,10 +57,11 @@ button:active {
 
 .slot-container > * {
     background-color: transparent;
-    height: 45px;
-    width: 45px;
+    height: 50px;
+    width: 50px;
     margin-left: 0.75rem;
-    
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
 }
 
 .slot-container > *:hover {

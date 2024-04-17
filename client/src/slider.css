@@ -1,27 +1,30 @@
 .slider-container {
-  width: 100%;
+  width: 78.9%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   margin-top: 1rem;
+  padding-left: 3.5rem;
 }
 
 .step-numbers {
   display: flex;
-  width: 20%;
-  justify-content: space-between;
-  padding-left: 2px;
+  width: 100%;
   font-size: small;
+  text-align: center;
 }
 
 .step-numbers > * {
   margin-top: 5px;
+  width: 50px;
+  margin-left: 0.75rem;
 }
 
 input[type=range] {
   -webkit-appearance: none;
-  width: 20%;
+  width: 1461px;
   background: transparent;
+  padding-left: 1.95rem;
 }
 input[type=range]:focus {
   outline: none;

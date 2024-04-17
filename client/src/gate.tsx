@@ -9,8 +9,8 @@ function Gate(props:any) {
       });
       const style = {
         transform: CSS.Translate.toString(transform),
-        width: 45,
-        height: 45
+        width: 50,
+        height: 50
         
       };
       
