@@ -6,3 +6,7 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
+/copilot/chatSessions/00000000000.xd
+/aws.xml
+/copilot/chatSessions/blobs/version
+/copilot/chatSessions/xd.lck
