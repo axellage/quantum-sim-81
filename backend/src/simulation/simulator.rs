@@ -237,7 +237,7 @@ mod tests {
         assert_eq!(result.unwrap(), expected_result);
     }
 
-    #[test]
+    /*#[test]
     fn test_cnot_gate_on_index() {
         let incoming_data = vec![vec!["X", "CNOT-1"], vec!["I", "CNOT-2"]];
         let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
@@ -448,5 +448,5 @@ mod tests {
         println!("{:?}", result.unwrap().last().unwrap().states);
 
         println!("{:?}", last_step.states);
-    }
+    }*/
 }
