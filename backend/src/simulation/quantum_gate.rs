@@ -2,13 +2,6 @@ use ndarray::linalg::kron;
 use ndarray::{arr2, Array2};
 use num::Complex;
 
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct QuantumGateWrapper {
-    pub gate: QuantumGate,
-    pub qubits: Vec<usize>,
-}
-
 // QuantumGate struct
 // Matrix is a 2D array of Complex numbers that represents the gate
 // Size is the number of qubits the gate operates on
@@ -16,6 +9,17 @@ pub struct QuantumGateWrapper {
 pub struct QuantumGate {
     pub matrix: Array2<Complex<f64>>,
     pub size: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct QuantumGateWrapper {
+    pub gate: QuantumGate,
+    pub qubits: Vec<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GatesInTimeStep {
+    pub gates: Vec<QuantumGateWrapper>,
 }
 
 impl QuantumGate {
