@@ -31,7 +31,7 @@ function App() {
 
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
   const [circuit, setCircuit] = useState<Circuit>(() => initializeCircuit(6, 25, "I"));  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
-  const [states, setStates] = useState([{"step":0, "state":[]}]);
+  const [states, setStates] = useState([{"step":0, "states":[{"qubits": [0], "state": [{0:[{"re":1, "im":0}],1:[{"re":0,"im":0}]}]}]}]);
 
   const [stepNumber, setStepNumber] = useState(25);
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
@@ -163,12 +163,17 @@ function handleDragEnd(event:any){
     return newCircuit;
   }
 
-  function getState(step: number): string {
-    let allStates: string[] = [];
+  function getState(step: number): any {
+    let allStates: any[] = [];
 
-    states.map((timeStep) => (
-      allStates.push(JSON.stringify(timeStep.state))
-    ))
+    states.forEach((timeStep) => (
+      timeStep.states.forEach((state) => (
+          allStates.push(state.state)
+      ))
+  ));
+    console.log("test1")
+    console.log(allStates[step])
+    console.log("test2")
 
     return allStates[step];
   }
