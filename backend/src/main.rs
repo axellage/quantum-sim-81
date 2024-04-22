@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 use rocket::http::Status;
 use rocket::response::{self, Responder, Response};
 use rocket::Request;
-use crate::simulation::quantum_state::QuantumStep;
-use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
+
+
 use crate::simulation::circuit_parser::{UnparsedCircuit};
 
 #[derive(Serialize, Deserialize)]

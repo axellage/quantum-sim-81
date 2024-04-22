@@ -44,8 +44,8 @@ impl EntangledQubitGroupsInTimeStep {
         let mut return_list: EntangledQubitGroupsInTimeStep = EntangledQubitGroupsInTimeStep { groups: vec![] };
         while index < self.groups.len() {
             let group = self.groups[index].clone();
-            if (group == group1) {
-                if (self.groups[index + 1] != group2) {
+            if group == group1 {
+                if self.groups[index + 1] != group2 {
                     panic!("invalid circuit");
                 }
                 group1.qubits.append(&mut group2.qubits.clone());
@@ -88,11 +88,11 @@ fn entangle_qubits(input: ParsedCircuit) -> Vec<EntangledQubitGroupsInTimeStep> 
         let mut gate_index = 0;
         while gate_index < input.circuit[step].gates.len() {
             let gate: QuantumGateWrapper = input.circuit[step].gates[gate_index].clone();
-            if (gate.qubits.len() == 2) {
+            if gate.qubits.len() == 2 {
                 let first_qubit_group = find_qubits_that_are_entangled_to_qubit(gate.qubits[0], previous_entangled_qubits.clone());
                 let second_qubit_group = find_qubits_that_are_entangled_to_qubit(gate.qubits[1], previous_entangled_qubits.clone());
 
-                if (first_qubit_group != second_qubit_group) {
+                if first_qubit_group != second_qubit_group {
                     current_entangled_qubits = current_entangled_qubits.combine_entangled_groups(first_qubit_group.clone(), second_qubit_group.clone());
                 }
                 gate_index += 1;
@@ -121,12 +121,12 @@ fn parse_time_step_individual_gates(unparsed_circuit: UnparsedCircuit, step: usi
         let unparsed_gate = unparsed_circuit.circuit[qubit_no][step].as_str();
         let parsed_gate_or_control_bit: Either<QuantumGate, ControlBit> = parse_gate(unparsed_gate);
 
-        if (parsed_gate_or_control_bit.is_left()) {
+        if parsed_gate_or_control_bit.is_left() {
             let parsed_gate = parsed_gate_or_control_bit.unwrap_left();
             current_gates.gates.push(QuantumGateWrapper { qubits: vec![qubit_no], gate: parsed_gate });
         } else {
             let control_bit = parsed_gate_or_control_bit.unwrap_right();
-            if (control_bit == ControlBit::down) {
+            if control_bit == ControlBit::down {
                 let gate_underneath = parse_gate(unparsed_circuit.circuit[qubit_no + 1][step].as_str()).unwrap_left();
                 let controlled_gate = QuantumGate::c_down(gate_underneath);
                 current_gates.gates.push(QuantumGateWrapper { qubits: vec![qubit_no, qubit_no + 1], gate: controlled_gate });
@@ -147,12 +147,12 @@ fn combine_gates_in_time_step(step: GatesInTimeStep, entangled_groups: Entangled
     current_step.push(previous_gate.clone());
 
     while gate_index < step.gates.len() {
-        let mut gate = step.gates[gate_index].clone();
+        let gate = step.gates[gate_index].clone();
         let operand_in_gate = gate.qubits[0];
         let entangled_group_of_operand = find_qubits_that_are_entangled_to_qubit(operand_in_gate, entangled_groups.clone());
 
-        let mut gate_to_push;
-        if (entangled_group_of_operand == previous_entangled_group_of_operand) {
+        let gate_to_push;
+        if entangled_group_of_operand == previous_entangled_group_of_operand {
             previous_gate.qubits.append(&mut gate.qubits.clone());
             let large_gate = QuantumGateWrapper { gate: previous_gate.gate.kronecker(gate.gate), qubits: previous_gate.qubits };
             current_step.pop();
@@ -181,21 +181,21 @@ fn account_for_entangled_qubits(entangled_qubits_before: EntangledQubitGroupsInT
         let mut operand_index = 0;
         while operand_index < gate.qubits.len() {
             let operand = gate.qubits[operand_index];
-            let entangled_group: EntangledQubitGroup = find_qubits_that_are_entangled_to_qubit(operand.clone(), entangled_qubits_before.clone());
+            let entangled_group: EntangledQubitGroup = find_qubits_that_are_entangled_to_qubit(operand, entangled_qubits_before.clone());
 
-            if (entangled_group == prev_entangled_group) {
+            if entangled_group == prev_entangled_group {
                 continue;
             }
             prev_entangled_group = entangled_group.clone();
 
-            if (entangled_group.qubits[0] == operand.clone()) {
+            if entangled_group.qubits[0] == operand {
                 println!("Creating large_gate starting at: {}", operand);
                 // This needs to be modified a bit to work with multi qubit gates: first all gates are iterated through,
                 // and if a gate acts on qubits from different groups then those groups are combined,
                 // then the code proceeds like normal
                 let mut large_gate: QuantumGate = gate.gate.clone();
                 for entangled_qubit in entangled_group.qubits.iter().skip(1) {
-                    large_gate = large_gate.kronecker(find_gate_that_acts_upon_qubit(entangled_qubit.clone(), preparsed_gates.clone()).gate);
+                    large_gate = large_gate.kronecker(find_gate_that_acts_upon_qubit(*entangled_qubit, preparsed_gates.clone()).gate);
                     gate_index += 1;
                     operand_index += 1;
                 }
@@ -210,7 +210,7 @@ fn account_for_entangled_qubits(entangled_qubits_before: EntangledQubitGroupsInT
 }
 
 fn find_qubits_that_are_entangled_to_qubit(qubit: usize, entangled_qubit_groups: EntangledQubitGroupsInTimeStep) -> EntangledQubitGroup {
-    for (index, entangled_group) in entangled_qubit_groups.groups.iter().enumerate() {
+    for (_index, entangled_group) in entangled_qubit_groups.groups.iter().enumerate() {
         if entangled_group.qubits.contains(&qubit) {
             return entangled_group.clone();
         }
@@ -219,9 +219,9 @@ fn find_qubits_that_are_entangled_to_qubit(qubit: usize, entangled_qubit_groups:
 }
 
 fn find_gate_that_acts_upon_qubit(qubit: usize, gates_in_time_step: GatesInTimeStep) -> QuantumGateWrapper {
-    for (gate_no, gate) in gates_in_time_step.gates.iter().enumerate() {
-        for (operand_no, operand) in gate.qubits.iter().enumerate() {
-            if (operand == &qubit) {
+    for (_gate_no, gate) in gates_in_time_step.gates.iter().enumerate() {
+        for (_operand_no, operand) in gate.qubits.iter().enumerate() {
+            if operand == &qubit {
                 return gate.clone();
             }
         }

@@ -1,10 +1,10 @@
-use std::collections::HashSet;
+
 use crate::simulation::circuit_parser::build_circuit_from_data;
 use crate::simulation::circuit_validator::{validate_grid_input, QuantumCircuitError};
-use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
+use crate::simulation::quantum_gate::{QuantumGate};
 use crate::simulation::quantum_state::{QuantumState, QuantumStateWrapper, QuantumStep};
 use crate::simulation::circuit_parser::{UnparsedCircuit, ParsedCircuit};
-use ndarray::{arr2, Array1};
+use ndarray::{arr2};
 use num::Complex;
 
 pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<QuantumStep>, QuantumCircuitError> {
@@ -36,7 +36,7 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
 
     let mut state_list: Vec<QuantumStep> = vec![states];
 
-    for (step, step_gate) in circuit.circuit.into_iter().enumerate() {
+    for (_step, step_gate) in circuit.circuit.into_iter().enumerate() {
         let mut new_state_list: Vec<QuantumStateWrapper> = vec![];
 
         for gate in step_gate.gates {
