@@ -164,18 +164,23 @@ function handleDragEnd(event:any){
   }
 
   function getState(step: number): any {
-    let allStates: any[] = [];
+    console.log("tjo")
+    console.log(states[step])
+    console.log("bror")
+    const timeStepStates = states[step].states;
+    console.log(timeStepStates[2])
 
-    states.forEach((timeStep) => (
-      timeStep.states.forEach((state) => (
-          allStates.push(state.state)
-      ))
-  ));
-    console.log("test1")
-    console.log(allStates[step])
-    console.log("test2")
-
-    return allStates[step];
+    let qubitStates: any[] = [];
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 2; j++) {
+        qubitStates.push(timeStepStates[i].state[j])
+      }
+    }
+    console.log("banan")
+    console.log(qubitStates)
+    console.log("vettefan")
+    //Ska returnera en string på formen '[{"re":1,"im":0}, etc...] som innehåller 64 states'
+    return JSON.stringify(qubitStates);
   }
 
   function States({ dispGraph } : {dispGraph: string}) {
