@@ -4,8 +4,6 @@ use crate::simulation::circuit_validator::{validate_grid_input, QuantumCircuitEr
 use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
 use crate::simulation::quantum_state::{QuantumState, QuantumStateWrapper, QuantumStep};
 use crate::simulation::circuit_parser::{UnparsedCircuit, ParsedCircuit};
-use crate::simulation::utils::{format_to_complex_container, to_little_endian};
-use crate::Step;
 use ndarray::{arr2, Array1};
 use num::Complex;
 
