@@ -6,12 +6,10 @@ import {DndContext} from '@dnd-kit/core';
 import axios from 'axios';
 import Circuitboard from './circuitboard';
 import './slider.css';
-
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { legendClasses } from '@mui/x-charts';
-import { useTicks } from '@mui/x-charts/hooks/useTicks';
-import { forEachChild } from 'typescript';
+
 
 
 function App() {
@@ -33,7 +31,6 @@ function App() {
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
   const [circuit, setCircuit] = useState<Circuit>(() => initializeCircuit(6, 25, "I"));  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
   const [states, setStates] = useState([{"step":0, "states":[{"qubits": [0], "state": [{0:[{"re":1, "im":0}],1:[{"re":0,"im":0}]}]}]}]);
-
   const [stepNumber, setStepNumber] = useState(25);
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
   
@@ -109,7 +106,9 @@ function App() {
 
 function handleDragEnd(event:any){
     const {active, over} = event;
-    console.log(over.id[0]);
+    if(over === null){
+      return;
+    }
     if(active.id === "C_down"){
       if(over.id[0] === 5){
         alert("No gate to control.");
@@ -143,7 +142,6 @@ function handleDragEnd(event:any){
   
 
   async function sendCircuit() {
-    console.log("Sending circuit: " + convertToOldVersion(circuit));
     const response = await axios.post('http://localhost:8000/simulate',
         {circuit_matrix: circuit})
   .then(function(response: any){
@@ -151,26 +149,12 @@ function handleDragEnd(event:any){
     setStates(response.data.state_list);
   })}
 
-  function convertToOldVersion(newCircuit:string[][]){
-    for(let i = 0; i < newCircuit.length - 1; i++){
-      for(let j = 0; j < newCircuit[0].length; j++){
-        if(newCircuit[i][j] === "C_down"){
-          newCircuit[i][j] = "CNOT-1";
-          newCircuit[i + 1][j] = "CNOT-2";
-          //newCircuit = swapMatrixItem(newCircuit, i + 1, j, "CNOT-2")
-        }
-      }
-    }
-    return newCircuit;
-  }
-
   function getState(step: number): any {
-    console.log("tjo")
-    console.log(states)
-    console.log("bror")
+    if(states[step] === undefined) {
+      return null;
+    }
     const timeStepStates = states[step].states;
     
-    console.log(timeStepStates[2])
 
     let qubitStates: any[] = [];
     for (let i = 0; i < 6; i++) {
@@ -178,18 +162,14 @@ function handleDragEnd(event:any){
         qubitStates.push(timeStepStates[i].state[j])
       }
     }
-    console.log("banan")
-    console.log(qubitStates)
-    console.log("vettefan")
+
     const result: ComplexNumber[] = generateCombinations(qubitStates);
-    console.log(result);
     //Ska returnera en string på formen '[{"re":1,"im":0}, etc...] som innehåller 64 states'
     return JSON.stringify(result);
   }
 
   function States({ dispGraph } : {dispGraph: string}) {
     let state = getState(stepNumber) ? JSON.parse(getState(stepNumber)) : null
-    console.log("hejsan" + dispGraph)
 
     let seriesLabel: string;
     let seriesDatakey: string;
@@ -291,23 +271,6 @@ function handleDragEnd(event:any){
       </section>
     );
 }
-
-
-  /*function swapMatrixItem(matrix:string[][], y:number, x:number, newItem:string){
-    const newMatrix = matrix.map((line, i) => {
-      if(i === y) {
-        return (line.map((gate, j) => {
-          if(j === x){
-            return (newItem);
-          } else{
-            return (gate);
-          }
-        }));
-      } else {
-        return line;
-      } 
-    });
-  }*/
 }
 
 
