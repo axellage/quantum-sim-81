@@ -11,6 +11,7 @@ import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { legendClasses } from '@mui/x-charts';
 import { useTicks } from '@mui/x-charts/hooks/useTicks';
+import { forEachChild } from 'typescript';
 
 
 function App() {
@@ -144,9 +145,9 @@ function handleDragEnd(event:any){
   async function sendCircuit() {
     console.log("Sending circuit: " + convertToOldVersion(circuit));
     const response = await axios.post('http://localhost:8000/simulate',
-        {circuit_matrix: convertToOldVersion(circuit)})
+        {circuit_matrix: circuit})
   .then(function(response: any){
-    console.log(response);
+    console.log(response.data);
     setStates(response.data.state_list);
   })}
 
@@ -165,9 +166,10 @@ function handleDragEnd(event:any){
 
   function getState(step: number): any {
     console.log("tjo")
-    console.log(states[step])
+    console.log(states)
     console.log("bror")
     const timeStepStates = states[step].states;
+    
     console.log(timeStepStates[2])
 
     let qubitStates: any[] = [];
@@ -179,8 +181,10 @@ function handleDragEnd(event:any){
     console.log("banan")
     console.log(qubitStates)
     console.log("vettefan")
+    const result: ComplexNumber[] = generateCombinations(qubitStates);
+    console.log(result);
     //Ska returnera en string på formen '[{"re":1,"im":0}, etc...] som innehåller 64 states'
-    return JSON.stringify(qubitStates);
+    return JSON.stringify(result);
   }
 
   function States({ dispGraph } : {dispGraph: string}) {
@@ -355,5 +359,48 @@ function toBitString(num: number): string {
 
   return result;
 }
+
+interface ComplexNumber {
+  re: number;
+  im: number;
+}
+
+function generateCombinations(qubitProbabilities: ComplexNumber[]): ComplexNumber[] {
+  // Number of qubits
+  const numQubits: number = qubitProbabilities.length / 2;
+
+  // Generate all possible combinations of qubit states
+  const combinations: number[][] = [];
+  const keysArray = Array.from({ length: numQubits }, (_, i) => i); // Convert iterator to array
+  for (let i = 0; i < Math.pow(2, numQubits); i++) {
+      combinations.push(keysArray.map(j => (i >> j) & 1));
+  }
+
+  // Initialize the result array
+  const result: ComplexNumber[] = Array.from({ length: Math.pow(2, numQubits) }, () => ({ re: 0, im: 0 }));
+
+  // Iterate over combinations
+  for (let i = 0; i < combinations.length; i++) {
+      // Calculate the combined probability amplitude for the combination
+      let probabilityAmplitude: ComplexNumber = { re: 1, im: 0 };
+      for (let j = 0; j < combinations[i].length; j++) {
+          const bit: number = combinations[i][j];
+          const qubitIndex: number = j * 2 + bit;
+          const prob: ComplexNumber = qubitProbabilities[qubitIndex];
+          probabilityAmplitude = {
+              re: probabilityAmplitude.re * prob.re - probabilityAmplitude.im * prob.im,
+              im: probabilityAmplitude.re * prob.im + probabilityAmplitude.im * prob.re
+          };
+      }
+
+      // Assign the probability amplitude to the corresponding index
+      result[i] = probabilityAmplitude;
+  }
+
+  return result;
+}
+
+
+
 
 
