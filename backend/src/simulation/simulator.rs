@@ -27,7 +27,7 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
         states: vec![],
     };
 
-    for i in 0..circuit.circuit.first().unwrap().len() {
+    for i in 0..circuit.circuit[0].gates.len() {
         states.states.push(QuantumStateWrapper {
             state: QuantumState::new(&[0]),
             qubits: vec![i],
@@ -40,7 +40,7 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
     for (step, step_gate) in circuit.circuit.into_iter().enumerate() {
         let mut new_state_list: Vec<QuantumStateWrapper> = vec![];
 
-        for gate in step_gate {
+        for gate in step_gate.gates {
             // Identify qubits that the gate will act on
             let qubits_to_act_on = gate.qubits.clone();
             // Get all previous states
