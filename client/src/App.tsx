@@ -5,15 +5,40 @@ import Toolbar from './toolbar';
 import {DndContext} from '@dnd-kit/core';
 import axios from 'axios';
 import Circuitboard from './circuitboard';
-import './slider.css'
+import './slider.css';
+import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
+import { axisClasses } from '@mui/x-charts/ChartsAxis';
+import { legendClasses } from '@mui/x-charts';
+
+
 
 function App() {
-  // This matrix doesn't contain actual elements, just information about what the circuit looks like.
-  const [circuit, setCircuit] = useState([["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"], ["I","I","I","I"]]);
-  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
-  const [states, setStates] = useState([{"step":0, "state":[]}]);
+  type Circuit = string[][];
 
-  const [stepNumber, setStepNumber] = useState(4)
+  // Function to initialize the circuit with a variable number of "I"s
+  const initializeCircuit = (rows: number, columns: number, initialValue: string): Circuit => {
+      const circuit: Circuit = [];
+      for (let i = 0; i < rows; i++) {
+          const row: string[] = [];
+          for (let j = 0; j < columns; j++) {
+              row.push(initialValue);
+          }
+          circuit.push(row);
+      }
+      return circuit;
+  }
+
+  // This matrix doesn't contain actual elements, just information about what the circuit looks like.
+  const [circuit, setCircuit] = useState<Circuit>(() => initializeCircuit(6, 25, "I"));  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
+  const [states, setStates] = useState([{"step":0, "states":[{"qubits": [0], "state": [{0:[{"re":1, "im":0}],1:[{"re":0,"im":0}]}]}]}]);
+  const [stepNumber, setStepNumber] = useState(25);
+  const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
+  
+
+  const changeGraph = (e:any) => {
+    setDisplayedGraph(e.target!.value);
+    
+  }
   const onChange = (e:any) => {
     setStepNumber(e.target!.value)
   }
@@ -34,8 +59,8 @@ function App() {
           <input
             type='range'
             min={1}
-            max={4}
-            defaultValue={4}
+            max={25}
+            defaultValue={25}
             step={1}
             className='range'
             onChange={onChange}
@@ -45,9 +70,34 @@ function App() {
             <p>2</p>
             <p>3</p>
             <p>4</p>
+            <p>5</p>
+            <p>6</p>
+            <p>7</p>
+            <p>8</p>
+            <p>9</p>
+            <p>10</p>
+            <p>11</p>
+            <p>12</p>
+            <p>13</p>
+            <p>14</p>
+            <p>15</p>
+            <p>16</p>
+            <p>17</p>
+            <p>18</p>
+            <p>19</p>
+            <p>20</p>
+            <p>21</p>
+            <p>22</p>
+            <p>23</p>
+            <p>24</p>
+            <p>25</p>
           </div>
         </div>
-        <States />
+        <select className="dropdown"  onChange={changeGraph}>
+            <option className='option' id="0" >Probabilities</option>
+            <option className='option' id="1" >State vectors</option>
+        </select>
+        <States dispGraph={displayedGraph}/>
       </DndContext>
     </div>
   );
@@ -56,25 +106,27 @@ function App() {
 
 function handleDragEnd(event:any){
     const {active, over} = event;
-    console.log(over.id[0]);
-    if(active.id == "C_down"){
-      if(over.id[0] == 5){
+    if(over === null){
+      return;
+    }
+    if(active.id === "C_down"){
+      if(over.id[0] === 5){
         alert("No gate to control.");
         return;
       }
-      if(circuit[parseInt(over.id[0]) + 1][parseInt(over.id[1])] == "I"){
+      if(circuit[parseInt(over.id[0]) + 1][parseInt(over.id.substring(1))] === "I"){
         alert("No gate to control.");
         return;
       }
     }
 
-    console.log("Placed gate on position " + over.id[1] + " on qubit line " + over.id[0]);
+    console.log("Placed gate on position " + over.id.substring(1) + " on qubit line " + over.id[0]);
 
     // These nested maps replace the gate at the given position.
     const newCircuit = circuit.map((line, i) => {
       if(i === (Number(over.id[0]))) {
         return (line.map((gate, j) => {
-          if(j === (Number(over.id[1]))){
+          if(j === (Number(over.id.substring(1)))){
             return (active.id);
           } else{
             return (gate);
@@ -90,63 +142,228 @@ function handleDragEnd(event:any){
   
 
   async function sendCircuit() {
-    console.log("Sending circuit: " + convertToOldVersion(circuit));
     const response = await axios.post('http://localhost:8000/simulate',
-        {circuit_matrix: convertToOldVersion(circuit)})
+        {circuit_matrix: circuit})
   .then(function(response: any){
-    console.log(response);
+    console.log(response.data);
     setStates(response.data.state_list);
   })}
 
-  function convertToOldVersion(newCircuit:string[][]){
-    for(let i = 0; i < newCircuit.length - 1; i++){
-      for(let j = 0; j < newCircuit[0].length; j++){
-        if(newCircuit[i][j] == "C_down"){
-          newCircuit[i][j] = "CNOT-1";
-          newCircuit[i + 1][j] = "CNOT-2";
-          //newCircuit = swapMatrixItem(newCircuit, i + 1, j, "CNOT-2")
-        }
+  function getState(step: number): any {
+    if(states[step] === undefined) {
+      return null;
+    }
+    const timeStepStates = states[step].states;
+    
+
+    let qubitStates: any[] = [];
+    for (let i = 0; i < 6; i++) {
+      for (let j = 0; j < 2; j++) {
+        qubitStates.push(timeStepStates[i].state[j])
       }
     }
-    return newCircuit;
+
+    const result: ComplexNumber[] = generateCombinations(qubitStates);
+    //Ska returnera en string på formen '[{"re":1,"im":0}, etc...] som innehåller 64 states'
+    return JSON.stringify(result);
   }
 
-  function getState(step: number) {
-    let allStates: string[] = [];
+  function States({ dispGraph } : {dispGraph: string}) {
+    let state = getState(stepNumber) ? JSON.parse(getState(stepNumber)) : null
 
-    states.map((timeStep) => (
-      allStates.push(JSON.stringify(timeStep.state))
-    ))
+    let seriesLabel: string;
+    let seriesDatakey: string;
+    let dataColor: string;
 
-    return allStates[step];
-  }
+    let dataset = [{}];
 
-  function States() {
+    if(dispGraph === "Probabilities") {
+      seriesLabel = 'Probability';
+      seriesDatakey = 'probability';
+      dataColor = '#08c49f';
+      if (state !== null){
+        dataset = getStatesOrProbabilities(true, state);
+      }
+    }else {
+      seriesLabel = 'Amplitude';
+      seriesDatakey = 'amplitude';
+      dataColor = '#a208c4'
+      if (state !== null){
+        dataset = getStatesOrProbabilities(false, state);
+      }
+    }
+
+    const valueFormatter = (value:any) => `${value}`;
+
+
+
+    const chartSetting = {
+      yAxis: [
+        {
+         min: 0, max: 1,
+        },
+      ],
+      series: [{ dataKey: `${seriesDatakey}`, valueFormatter, label: `${seriesLabel}`}],
+      height: 300,
+      sx: {
+        [`& .${axisClasses.directionY} .${axisClasses.label} `]: {
+          transform: 'translateX(-10px)',
+          fill: '#ffffff'
+        },
+        [`& .${axisClasses.left} .${axisClasses.tickLabel} `]: {
+          fill: '#ffffff'
+        },
+        [`& .${axisClasses.directionY} .${axisClasses.line}`]: {
+          stroke: '#ffffff'
+        },
+        [`& .${axisClasses.directionX} .${axisClasses.line}`]: {
+          stroke: '#ffffff'
+        },
+        [`& .${axisClasses.directionY} .${axisClasses.tick}`]: {
+          stroke: '#ffffff'
+        },
+        [`& .${axisClasses.directionX} .${axisClasses.tick}`]: {
+          stroke: '#ffffff',
+        },
+        [`& .${axisClasses.directionX} .${axisClasses.tickLabel}`]: {
+          transform: 'rotate(-90deg) translateX(-35px) translateY(-13px)',
+          fill: '#ffffff'
+        },
+        [`& .${legendClasses.mark}`]: {
+          fill: `${dataColor}`
+        },
+        [`& .${barElementClasses.root}`]: {
+          fill: `${dataColor}`
+        }
+      }
+    };
+
+    const tickPlacement = 'middle';
+    const tickLabelPlacement = 'middle';
+
+    
+
+    
+  
     return (
       <section className="states">
-        <h2>{getState(stepNumber)}</h2>
+        {/*<h2>{getState(stepNumber)}</h2>*/}
+        <BarChart
+        dataset={dataset}
+        xAxis={[
+          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement, tickLabelInterval: () => true},
+        ]}
+        margin={{
+          top: 10,
+          bottom: 60,
+        }}
+        slotProps={{
+          legend : {
+            labelStyle : {
+              fill: '#ffffff'
+            }
+          }
+        }}
+        grid={{ horizontal: true }}
+        tooltip={{trigger: 'item'}}
+        {...chartSetting}
+      />
       </section>
     );
 }
-
-
-  /*function swapMatrixItem(matrix:string[][], y:number, x:number, newItem:string){
-    const newMatrix = matrix.map((line, i) => {
-      if(i === y) {
-        return (line.map((gate, j) => {
-          if(j === x){
-            return (newItem);
-          } else{
-            return (gate);
-          }
-        }));
-      } else {
-        return line;
-      } 
-    });
-  }*/
 }
 
 
 
 export default App;
+
+function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im:number}[]): {}[] {
+  let probabilities: {probability: number, bitstring: string}[] = [];
+  let statevecs: {amplitude: number, bitstring: string}[] = [];
+  let amplitude: number;
+  let bitstring: string;
+  let probability: number;
+
+  if(returnProb) {
+    for (let i = 0; i < stateList.length; i++) {
+      bitstring = toBitString(i);
+      probability = Math.round(((stateList[i].re)*(stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      probabilities.push({probability: probability, bitstring: `${bitstring}`}) 
+    }
+    return probabilities;
+  } else {
+    for (let i = 0; i < stateList.length; i++) {
+      bitstring = toBitString(i);
+      amplitude = Math.round(((stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      statevecs.push({amplitude: amplitude, bitstring: `${bitstring}`})
+    }
+    return statevecs;
+  }
+
+  
+}
+
+function toBitString(num: number): string {
+
+  if (num === 0) {
+      return "000000";
+  }
+
+  let result: string = "";
+
+  while (num > 0) {
+      result = (num & 1) + result;
+      num >>= 1;
+  }
+
+  while (result.length < 6) {
+      result = "0" + result;
+  }
+
+  return result;
+}
+
+interface ComplexNumber {
+  re: number;
+  im: number;
+}
+
+function generateCombinations(qubitProbabilities: ComplexNumber[]): ComplexNumber[] {
+  // Number of qubits
+  const numQubits: number = qubitProbabilities.length / 2;
+
+  // Generate all possible combinations of qubit states
+  const combinations: number[][] = [];
+  const keysArray = Array.from({ length: numQubits }, (_, i) => i); // Convert iterator to array
+  for (let i = 0; i < Math.pow(2, numQubits); i++) {
+      combinations.push(keysArray.map(j => (i >> j) & 1));
+  }
+
+  // Initialize the result array
+  const result: ComplexNumber[] = Array.from({ length: Math.pow(2, numQubits) }, () => ({ re: 0, im: 0 }));
+
+  // Iterate over combinations
+  for (let i = 0; i < combinations.length; i++) {
+      // Calculate the combined probability amplitude for the combination
+      let probabilityAmplitude: ComplexNumber = { re: 1, im: 0 };
+      for (let j = 0; j < combinations[i].length; j++) {
+          const bit: number = combinations[i][j];
+          const qubitIndex: number = j * 2 + bit;
+          const prob: ComplexNumber = qubitProbabilities[qubitIndex];
+          probabilityAmplitude = {
+              re: probabilityAmplitude.re * prob.re - probabilityAmplitude.im * prob.im,
+              im: probabilityAmplitude.re * prob.im + probabilityAmplitude.im * prob.re
+          };
+      }
+
+      // Assign the probability amplitude to the corresponding index
+      result[i] = probabilityAmplitude;
+  }
+
+  return result;
+}
+
+
+
+
+
