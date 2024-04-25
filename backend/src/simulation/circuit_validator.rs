@@ -62,11 +62,7 @@ fn validate_gate(gate: &str) -> bool {
             | "S"
             | "CZ"
             | "SWAP-1"
-            | "CCNOT-1"
-            | "CNOT-1"
-            | "CNOT-2"
-            | "CCNOT-2"
-            | "CCNOT-3"
+            | "C_down"
             | "SWAP-2"
     )
 }
@@ -74,9 +70,6 @@ fn validate_gate(gate: &str) -> bool {
 // If a multi-qubit gate, return the other parts of the gate which must be in the same step
 fn is_multi_qubit_gate(gate: &str) -> &str {
     match gate {
-        "CNOT-1" => "CNOT-2",
-        "CCNOT-1" => "CCNOT-2",
-        "CCNOT-2" => "CCNOT-3",
         "SWAP-1" => "SWAP-2",
         _ => "",
     }
@@ -154,37 +147,6 @@ mod tests {
     }
 
     #[test]
-    fn test_is_multi_qubit_gate() {
-        let multi_qubit_gate: &str = "CNOT-1";
-        let non_multi_qubit_gate: &str = "I";
-
-        assert_eq!(is_multi_qubit_gate(multi_qubit_gate), "CNOT-2");
-        assert_eq!(is_multi_qubit_gate(non_multi_qubit_gate), "");
-    }
-
-    #[test]
-    fn test_valid_multi_qubit_gates_separated() {
-        let separated_multi_qubit_gate_grid = vec![
-            vec!["CNOT-1", "I", "CNOT-2"], // CNOT-1 and CNOT-2 separated by an I gate
-        ];
-        assert_eq!(
-            validate_grid_input(&UnparsedCircuit::from(separated_multi_qubit_gate_grid)),
-            Err(QuantumCircuitError::MultiQubitGateMismatch)
-        );
-    }
-
-    #[test]
-    fn test_multi_qubit_gate_wrong_order_same_step() {
-        let grid = vec![
-            vec!["CNOT-2", "CNOT-1"], // CNOT-2 and CNOT-1 in alone in a step
-        ];
-        assert_eq!(
-            validate_grid_input(&UnparsedCircuit::from(grid)),
-            Err(QuantumCircuitError::MultiQubitGateMismatch)
-        );
-    }
-
-    #[test]
     fn test_valid_gates_but_exceed_qubit_limit() {
         let grid = vec![
             vec!["I", "H"],
@@ -204,7 +166,7 @@ mod tests {
     #[test]
     fn test_valid_gates_but_missing_multi_qubit_component() {
         let grid = vec![
-            vec!["CNOT-1"], // Missing CNOT-2
+            vec!["SWAP-1"], // Missing CNOT-2
         ];
         assert_eq!(
             validate_grid_input(&UnparsedCircuit::from(grid)),
@@ -223,7 +185,7 @@ mod tests {
 
     #[test]
     fn valid_circuit() {
-        let grid = vec![vec!["H", "CNOT-1"], vec!["I", "CNOT-2"]];
+        let grid = vec![vec!["H", "C_down"], vec!["I", "X"]];
         assert_eq!(validate_grid_input(&UnparsedCircuit::from(grid)), Ok(()));
     }
 
@@ -235,7 +197,7 @@ mod tests {
 
     #[test]
     fn ending_with_multi_qubit_gate() {
-        let grid = vec![vec!["H", "CNOT-2"], vec!["I", "CNOT-2"]];
+        let grid = vec![vec!["H", "SWAP-2"], vec!["I", "SWAP-2"]];
         assert_eq!(
             validate_grid_input(&UnparsedCircuit::from(grid)),
             Err(QuantumCircuitError::MultiQubitGateMismatch)

@@ -1,12 +1,10 @@
-use std::collections::HashSet;
+
 use crate::simulation::circuit_parser::build_circuit_from_data;
 use crate::simulation::circuit_validator::{validate_grid_input, QuantumCircuitError};
-use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
+use crate::simulation::quantum_gate::{QuantumGate};
 use crate::simulation::quantum_state::{QuantumState, QuantumStateWrapper, QuantumStep};
 use crate::simulation::circuit_parser::{UnparsedCircuit, ParsedCircuit};
-use crate::simulation::utils::{format_to_complex_container, to_little_endian};
-use crate::Step;
-use ndarray::{arr2, Array1};
+use ndarray::{arr2};
 use num::Complex;
 
 pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<QuantumStep>, QuantumCircuitError> {
@@ -16,6 +14,7 @@ pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<Qu
     }
 
     let parsed_circuit: ParsedCircuit = build_circuit_from_data(incoming_data);
+    println!("Parsed circuit: {:?}", parsed_circuit);
     let simulated_states: Vec<QuantumStep> = simulate_circuit(parsed_circuit);
 
 
@@ -37,7 +36,7 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
 
     let mut state_list: Vec<QuantumStep> = vec![states];
 
-    for (step, step_gate) in circuit.circuit.into_iter().enumerate() {
+    for (_step, step_gate) in circuit.circuit.into_iter().enumerate() {
         let mut new_state_list: Vec<QuantumStateWrapper> = vec![];
 
         for gate in step_gate.gates {
@@ -237,9 +236,9 @@ mod tests {
         assert_eq!(result.unwrap(), expected_result);
     }
 
-    /*#[test]
+    #[test]
     fn test_cnot_gate_on_index() {
-        let incoming_data = vec![vec!["X", "CNOT-1"], vec!["I", "CNOT-2"]];
+        let incoming_data = vec![vec!["X", "C_down"], vec!["I", "X"]];
         let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
 
         let expected_result = vec![
@@ -282,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_entanglement_circuit() {
-        let incoming_data = UnparsedCircuit::from(vec![vec!["H", "CNOT-1"], vec!["I", "CNOT-2"]]);
+        let incoming_data = UnparsedCircuit::from(vec![vec!["H", "C_down"], vec!["I", "X"]]);
         let result = simulate_circuit_handler(incoming_data);
 
         let expected_result = vec![
@@ -339,9 +338,9 @@ mod tests {
     fn test_ghz_state_circuit() {
         let incoming_data = UnparsedCircuit::from(
             vec![
-                vec!["H", "CNOT-1", "I"],
-                vec!["I", "CNOT-2", "CNOT-1"],
-                vec!["I", "I", "CNOT-2"],
+                vec!["H", "C_down", "I"],
+                vec!["I", "X", "C_down"],
+                vec!["I", "I", "X"],
             ]
         );
 
@@ -448,5 +447,5 @@ mod tests {
         println!("{:?}", result.unwrap().last().unwrap().states);
 
         println!("{:?}", last_step.states);
-    }*/
+    }
 }
