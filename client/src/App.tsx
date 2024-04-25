@@ -142,10 +142,13 @@ function handleDragEnd(event:any){
   
 
   async function sendCircuit() {
+    console.log("Circuit:")
+    console.log(circuit);
     const response = await axios.post('http://localhost:8000/simulate',
         {circuit_matrix: circuit})
   .then(function(response: any){
-    console.log(response.data);
+    console.log("statelist")
+    console.log(response);
     setStates(response.data.state_list);
   })}
 
@@ -154,11 +157,17 @@ function handleDragEnd(event:any){
       return null;
     }
     const timeStepStates = states[step].states;
-    
+    console.log("Timestepstate")
+    console.log(timeStepStates);
+    console.log(states)
 
     let qubitStates: any[] = [];
     for (let i = 0; i < 6; i++) {
       for (let j = 0; j < 2; j++) {
+        //Ta bort när backend ger 6 qubits med c_down
+        if (timeStepStates[i] === undefined) {
+          return null;
+        }
         qubitStates.push(timeStepStates[i].state[j])
       }
     }
@@ -281,20 +290,29 @@ function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im
   let probabilities: {probability: number, bitstring: string}[] = [];
   let statevecs: {amplitude: number, bitstring: string}[] = [];
   let amplitude: number;
+  let phaseAngle: number;
   let bitstring: string;
   let probability: number;
 
   if(returnProb) {
     for (let i = 0; i < stateList.length; i++) {
       bitstring = toBitString(i);
-      probability = Math.round(((stateList[i].re)*(stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      if (stateList[i].im !== 0) {
+        probability = Math.round(((stateList[i].im)*(stateList[i].im) + Number.EPSILON) * 1000000) / 1000000;
+      }else{
+        probability = Math.round(((stateList[i].re)*(stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      }
       probabilities.push({probability: probability, bitstring: `${bitstring}`}) 
     }
     return probabilities;
   } else {
     for (let i = 0; i < stateList.length; i++) {
       bitstring = toBitString(i);
-      amplitude = Math.round(((stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+      if (stateList[i].im !== 0) {
+        amplitude = Math.round(((Math.abs(stateList[i].im)) + Number.EPSILON) * 1000000) / 1000000;
+      }else {
+        amplitude = Math.round(((Math.abs(stateList[i].re)) + Number.EPSILON) * 1000000) / 1000000;
+      }
       statevecs.push({amplitude: amplitude, bitstring: `${bitstring}`})
     }
     return statevecs;
