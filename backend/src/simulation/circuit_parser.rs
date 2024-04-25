@@ -61,7 +61,7 @@ impl EntangledQubitGroupsInTimeStep {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub enum ControlBit { up, down }
+pub enum PartOfMultiGate { control_down, swap }
 
 pub fn build_circuit_from_data(grid: UnparsedCircuit) -> ParsedCircuit {
     let gates_parsed_individually: ParsedCircuit = parse_gates_individually(grid);
@@ -119,18 +119,29 @@ fn parse_time_step_individual_gates(unparsed_circuit: UnparsedCircuit, step: usi
     let mut qubit_no = 0;
     while qubit_no < unparsed_circuit.circuit.len() {
         let unparsed_gate = unparsed_circuit.circuit[qubit_no][step].as_str();
-        let parsed_gate_or_control_bit: Either<QuantumGate, ControlBit> = parse_gate(unparsed_gate);
+        let parsed_gate_or_part_of_multigate: Either<QuantumGate, PartOfMultiGate> = parse_gate(unparsed_gate);
 
-        if parsed_gate_or_control_bit.is_left() {
-            let parsed_gate = parsed_gate_or_control_bit.unwrap_left();
+        if parsed_gate_or_part_of_multigate.is_left() {
+            let parsed_gate = parsed_gate_or_part_of_multigate.unwrap_left();
             current_gates.gates.push(QuantumGateWrapper { qubits: vec![qubit_no], gate: parsed_gate });
-        } else {
-            let control_bit = parsed_gate_or_control_bit.unwrap_right();
-            if control_bit == ControlBit::down {
+        } 
+        else 
+        {
+            let gate_part = parsed_gate_or_part_of_multigate.unwrap_right();
+            if gate_part == PartOfMultiGate::control_down {
                 let gate_underneath = parse_gate(unparsed_circuit.circuit[qubit_no + 1][step].as_str()).unwrap_left();
                 let controlled_gate = QuantumGate::c_down(gate_underneath);
                 current_gates.gates.push(QuantumGateWrapper { qubits: vec![qubit_no, qubit_no + 1], gate: controlled_gate });
                 qubit_no += 1;
+            } else if gate_part == PartOfMultiGate::swap {
+                let object_underneath = parse_gate(unparsed_circuit.circuit[qubit_no + 1][step].as_str());
+                if(object_underneath.is_right()){
+                    current_gates.gates.push(QuantumGateWrapper { qubits: vec![qubit_no, qubit_no + 1], gate: QuantumGate::swap_gate() });
+                    qubit_no += 1;
+                } else {
+                    // Found incomplete swap gate, replacing with identity gate
+                    current_gates.gates.push(QuantumGateWrapper { qubits: vec![qubit_no], gate: QuantumGate::i_gate() });
+                }
             }
         }
         qubit_no += 1;
@@ -236,7 +247,7 @@ fn expand_gate_to_entangled_qubits() -> QuantumGate {
     }
 }
 
-fn parse_gate(gate_string: &str) -> Either<QuantumGate, ControlBit> {
+fn parse_gate(gate_string: &str) -> Either<QuantumGate, PartOfMultiGate> {
     // Multi qubit gates are only applied once, so we can ignore the subsequent parts
     match gate_string {
         "I" => Left(QuantumGate::i_gate()),
@@ -246,9 +257,8 @@ fn parse_gate(gate_string: &str) -> Either<QuantumGate, ControlBit> {
         "Z" => Left(QuantumGate::z_gate()),
         "T" => Left(QuantumGate::t_gate()),
         "S" => Left(QuantumGate::s_gate()),
-        // TODO swap (reimplement)
-        "C_down" => Right(ControlBit::down),
-        "C_up" => Right(ControlBit::up),
+        "Swap" => Right(PartOfMultiGate::swap),
+        "C_down" => Right(PartOfMultiGate::control_down),
         _ => panic!("Invalid gate"),
     }
 }
@@ -535,6 +545,66 @@ mod tests {
                                 QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![2] }]
                 },
                 GatesInTimeStep { gates: vec![QuantumGateWrapper { gate: QuantumGate::i_gate().kronecker(QuantumGate::c_down(QuantumGate::x_gate())), qubits: vec![0, 1, 2] }] },
+            ]
+        };
+
+        println!("{:?}", circuit);
+
+        assert_eq!(circuit, expected_result);
+    }
+
+    #[test]
+    fn parse__swap_gate_test() {
+        let grid = vec![
+            vec!["X", "Swap", "H"],
+            vec!["I", "Swap", "Z"],
+        ];
+
+        let circuit = build_circuit_from_data(UnparsedCircuit::from(grid));
+
+        let expected_result = ParsedCircuit {
+            circuit:
+            vec![
+                GatesInTimeStep {
+                    gates: vec![QuantumGateWrapper { gate: QuantumGate::x_gate(), qubits: vec![0] },
+                                QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![1] },]
+                },
+                GatesInTimeStep {
+                    gates: vec![QuantumGateWrapper { gate: QuantumGate::swap_gate(), qubits: vec![0, 1] }]
+                },
+                GatesInTimeStep { gates: vec![QuantumGateWrapper { gate: QuantumGate::h_gate().kronecker(QuantumGate::z_gate()), qubits: vec![0, 1] }] },
+            ]
+        };
+
+        println!("{:?}", circuit);
+
+        assert_eq!(circuit, expected_result);
+    }
+
+    #[test]
+    fn parse__swap_gate__odd_amount() {
+        let grid = vec![
+            vec!["X", "Swap"],
+            vec!["I", "Swap"],
+            vec!["H", "Swap"],
+            vec!["I", "H"],
+        ];
+
+        let circuit = build_circuit_from_data(UnparsedCircuit::from(grid));
+
+        let expected_result = ParsedCircuit {
+            circuit:
+            vec![
+                GatesInTimeStep {
+                    gates: vec![QuantumGateWrapper { gate: QuantumGate::x_gate(), qubits: vec![0] },
+                                QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![1] },
+                                QuantumGateWrapper { gate: QuantumGate::h_gate(), qubits: vec![2] },
+                                QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![3] },]
+                },
+                GatesInTimeStep {
+                    gates: vec![QuantumGateWrapper { gate: QuantumGate::swap_gate(), qubits: vec![0,1] },
+                                QuantumGateWrapper { gate: QuantumGate::i_gate(), qubits: vec![2] },
+                                QuantumGateWrapper { gate: QuantumGate::h_gate(), qubits: vec![3] },]},
             ]
         };
 
