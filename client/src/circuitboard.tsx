@@ -28,31 +28,6 @@ function Circuitboard(circuit: string[][]){
         </div>
       ]);
     }, [circuit]); // Circuit dependency array to make it only update when circuit is changed
-  
-  {/*  const addQubit = () => {
-      if (qubitLines.length < 6) {
-        setQubitLines(prevQubitLines => [
-          ...prevQubitLines,
-          <div>
-            <QubitLine id={JSON.stringify(qubitLines.length)}/>
-          </div>
-        ]);
-      }
-      else {
-        alert("No more qubits can be added");
-        console.log("No more qubits can be added");
-      }
-    };
-  
-    const removeQubit = () => {
-      if (qubitLines.length > 1) {
-        setQubitLines(prevQubitLines => prevQubitLines.slice(0, -1));
-      }
-      else {
-        //TODO make this a visible error
-        console.log("Already 0 qubits");
-      }
-    };*/}
 
     function QubitLine(props:any) {
         const qubitLineId = Number(props.id);

@@ -6,7 +6,6 @@ function Toolbar(){
     return (
     <div className='Toolbar'>
       <div className='gates-container'>
-      <h1 style={{color:'white'}}>Gates</h1>
         <div className='gates'>
           <Gate name="X" id = "X"/>
           <Gate name="Y" id = "Y"/>
@@ -15,13 +14,10 @@ function Toolbar(){
         </div>
       </div>
       <div className='control'>
-      <h1 style={{color:'white'}}>Control</h1>
         <Gate name="." id = "C_down"/>
       </div>
       <div className='swap'>
-      <h1 style={{color:'white'}}>Swap</h1>
-        <Gate name="SWAP-1" id = "SWAP-1"/>
-        <Gate name="SWAP-2" id = "SWAP-2"/>
+        <Gate name="Swap" id = "Swap"/>
       </div>
     </div>
     );

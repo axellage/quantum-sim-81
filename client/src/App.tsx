@@ -122,6 +122,22 @@ function handleDragEnd(event:any){
       }
     }
 
+    if(active.id === "Swap"){
+      let placable = true;
+      for (let i = 0; i < circuit.length; i++) {
+        if (circuit[i].includes("Swap")) {
+          if (over.id.substring(1) !== JSON.stringify(circuit[i].indexOf("Swap")) || (Math.abs(over.id[0]) - i) > 1) {
+            alert("Second swap must be placed on the qubit directly below the first");
+            placable = false;
+          }
+        }
+        
+      }
+      if(!placable){
+        return;
+      }
+    }
+
     console.log("Placed gate on position " + over.id.substring(1) + " on qubit line " + over.id[0]);
 
     // These nested maps replace the gate at the given position.
@@ -315,46 +331,6 @@ function toBitString(num: number): string {
 
   while (result.length < 6) {
       result = "0" + result;
-  }
-
-  return result;
-}
-
-interface ComplexNumber {
-  re: number;
-  im: number;
-}
-
-function generateCombinations(qubitProbabilities: ComplexNumber[]): ComplexNumber[] {
-  // Number of qubits
-  const numQubits: number = qubitProbabilities.length / 2;
-
-  // Generate all possible combinations of qubit states
-  const combinations: number[][] = [];
-  const keysArray = Array.from({ length: numQubits }, (_, i) => i); // Convert iterator to array
-  for (let i = 0; i < Math.pow(2, numQubits); i++) {
-      combinations.push(keysArray.map(j => (i >> j) & 1));
-  }
-
-  // Initialize the result array
-  const result: ComplexNumber[] = Array.from({ length: Math.pow(2, numQubits) }, () => ({ re: 0, im: 0 }));
-
-  // Iterate over combinations
-  for (let i = 0; i < combinations.length; i++) {
-      // Calculate the combined probability amplitude for the combination
-      let probabilityAmplitude: ComplexNumber = { re: 1, im: 0 };
-      for (let j = 0; j < combinations[i].length; j++) {
-          const bit: number = combinations[i][j];
-          const qubitIndex: number = j * 2 + bit;
-          const prob: ComplexNumber = qubitProbabilities[qubitIndex];
-          probabilityAmplitude = {
-              re: probabilityAmplitude.re * prob.re - probabilityAmplitude.im * prob.im,
-              im: probabilityAmplitude.re * prob.im + probabilityAmplitude.im * prob.re
-          };
-      }
-
-      // Assign the probability amplitude to the corresponding index
-      result[i] = probabilityAmplitude;
   }
 
   return result;
