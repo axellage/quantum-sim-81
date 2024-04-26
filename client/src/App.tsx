@@ -8,7 +8,8 @@ import Circuitboard from './circuitboard';
 import './slider.css';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { legendClasses } from '@mui/x-charts';
+import { ChartsAxisHighlightPath, ChartsAxisTooltipContent, ChartsItemTooltipContent, ChartsTooltip, chartsTooltipClasses, legendClasses } from '@mui/x-charts';
+import { Tooltip, tooltipClasses } from '@mui/material';
 
 
 
@@ -30,13 +31,14 @@ function App() {
 
   // This matrix doesn't contain actual elements, just information about what the circuit looks like.
   const [circuit, setCircuit] = useState<Circuit>(() => initializeCircuit(6, 25, "I"));  // Initializing this because it complains about type otherwise, there is probably a better way to do it.
-  const [states, setStates] = useState([{"step":0, "states":[{"qubits": [0], "state": [{0:[{"re":1, "im":0}],1:[{"re":0,"im":0}]}]}]}]);
+  const [states, setStates] = useState([{"0":1, "1":0}]);
   const [stepNumber, setStepNumber] = useState(25);
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
   
 
   const changeGraph = (e:any) => {
     setDisplayedGraph(e.target!.value);
+    sendCircuit();
     
   }
   const onChange = (e:any) => {
@@ -148,37 +150,11 @@ function handleDragEnd(event:any){
         {circuit_matrix: circuit})
   .then(function(response: any){
     console.log("statelist")
-    console.log(response);
-    setStates(response.data.state_list);
+    console.log(response.data.state_list[stepNumber]);
+    setStates(response.data.state_list[stepNumber].col.data);
   })}
 
-  function getState(step: number): any {
-    if(states[step] === undefined) {
-      return null;
-    }
-    const timeStepStates = states[step].states;
-    console.log("Timestepstate")
-    console.log(timeStepStates);
-    console.log(states)
-
-    let qubitStates: any[] = [];
-    for (let i = 0; i < 6; i++) {
-      for (let j = 0; j < 2; j++) {
-        //Ta bort när backend ger 6 qubits med c_down
-        if (timeStepStates[i] === undefined) {
-          return null;
-        }
-        qubitStates.push(timeStepStates[i].state[j])
-      }
-    }
-
-    const result: ComplexNumber[] = generateCombinations(qubitStates);
-    //Ska returnera en string på formen '[{"re":1,"im":0}, etc...] som innehåller 64 states'
-    return JSON.stringify(result);
-  }
-
   function States({ dispGraph } : {dispGraph: string}) {
-    let state = getState(stepNumber) ? JSON.parse(getState(stepNumber)) : null
 
     let seriesLabel: string;
     let seriesDatakey: string;
@@ -190,15 +166,15 @@ function handleDragEnd(event:any){
       seriesLabel = 'Probability';
       seriesDatakey = 'probability';
       dataColor = '#08c49f';
-      if (state !== null){
-        dataset = getStatesOrProbabilities(true, state);
+      if (states !== null){
+        dataset = getStatesOrProbabilities(true, states);
       }
     }else {
       seriesLabel = 'Amplitude';
       seriesDatakey = 'amplitude';
       dataColor = '#a208c4'
-      if (state !== null){
-        dataset = getStatesOrProbabilities(false, state);
+      if (states !== null){
+        dataset = getStatesOrProbabilities(false, states);
       }
     }
 
@@ -243,6 +219,10 @@ function handleDragEnd(event:any){
         },
         [`& .${barElementClasses.root}`]: {
           fill: `${dataColor}`
+        },
+        [`& .${chartsTooltipClasses.mark}`]: {
+          stroke: `${dataColor}`,
+          display: 'none'
         }
       }
     };
@@ -256,7 +236,6 @@ function handleDragEnd(event:any){
   
     return (
       <section className="states">
-        {/*<h2>{getState(stepNumber)}</h2>*/}
         <BarChart
         dataset={dataset}
         xAxis={[
@@ -271,10 +250,10 @@ function handleDragEnd(event:any){
             labelStyle : {
               fill: '#ffffff'
             }
-          }
+          },
         }}
         grid={{ horizontal: true }}
-        tooltip={{trigger: 'item'}}
+        tooltip={{trigger: 'item' }}
         {...chartSetting}
       />
       </section>
@@ -286,7 +265,7 @@ function handleDragEnd(event:any){
 
 export default App;
 
-function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im:number}[]): {}[] {
+function getStatesOrProbabilities(returnProb: boolean, stateList: {0:number, 1:number}[]): {}[] {
   let probabilities: {probability: number, bitstring: string}[] = [];
   let statevecs: {amplitude: number, bitstring: string}[] = [];
   let amplitude: number;
@@ -297,10 +276,10 @@ function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im
   if(returnProb) {
     for (let i = 0; i < stateList.length; i++) {
       bitstring = toBitString(i);
-      if (stateList[i].im !== 0) {
-        probability = Math.round(((stateList[i].im)*(stateList[i].im) + Number.EPSILON) * 1000000) / 1000000;
+      if (stateList[i][1] !== 0) {
+        probability = Math.round(((stateList[i][1])*(stateList[i][1]) + Number.EPSILON) * 1000000) / 1000000;
       }else{
-        probability = Math.round(((stateList[i].re)*(stateList[i].re) + Number.EPSILON) * 1000000) / 1000000;
+        probability = Math.round(((stateList[i][0])*(stateList[i][0]) + Number.EPSILON) * 1000000) / 1000000;
       }
       probabilities.push({probability: probability, bitstring: `${bitstring}`}) 
     }
@@ -308,10 +287,10 @@ function getStatesOrProbabilities(returnProb: boolean, stateList: {re:number, im
   } else {
     for (let i = 0; i < stateList.length; i++) {
       bitstring = toBitString(i);
-      if (stateList[i].im !== 0) {
-        amplitude = Math.round(((Math.abs(stateList[i].im)) + Number.EPSILON) * 1000000) / 1000000;
+      if (stateList[i][1] !== 0) {
+        amplitude = Math.round(((Math.abs(stateList[i][1])) + Number.EPSILON) * 1000000) / 1000000;
       }else {
-        amplitude = Math.round(((Math.abs(stateList[i].re)) + Number.EPSILON) * 1000000) / 1000000;
+        amplitude = Math.round(((Math.abs(stateList[i][0])) + Number.EPSILON) * 1000000) / 1000000;
       }
       statevecs.push({amplitude: amplitude, bitstring: `${bitstring}`})
     }

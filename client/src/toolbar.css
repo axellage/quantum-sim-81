@@ -1,8 +1,14 @@
 .Toolbar {
-    padding: 1rem;
+    display: flex;
+    width: 30%;
+    justify-content: space-between;
+    padding-left: 2rem;
+}
+
+.gates {
     display: grid;
-    grid-template-columns: auto auto auto;
-    width: 10%;
+    grid-template-columns: auto auto ;
+    width: 5%;
 }
 
 
