@@ -4,7 +4,9 @@ use crate::simulation::circuit_validator::{validate_grid_input, QuantumCircuitEr
 use crate::simulation::quantum_gate::{QuantumGate};
 use crate::simulation::quantum_state::{QuantumState, QuantumStateWrapper, QuantumStep};
 use crate::simulation::circuit_parser::{UnparsedCircuit, ParsedCircuit};
+use crate::simulation::utils::to_little_endian;
 use ndarray::{arr2};
+use ndarray::Array2;
 use num::Complex;
 
 pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<QuantumState>, QuantumCircuitError> {
@@ -66,31 +68,10 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
                 }
             }
 
-
-            let mut combined_gate = QuantumGate {
-                matrix: arr2(&[[Complex::new(1.0, 0.0)]]),
-                size: 0,
-            };
-
-            let mut i = 0;
-
-            for qubit in qubits_in_combined_state.clone() {
-                if qubits_in_combined_state.clone().len() == combined_gate.size {
-                    break;
-                }
-                if i < gate.qubits.len() && &qubit == gate.qubits.get(i).unwrap() {
-                    combined_gate = combined_gate.kronecker(gate.gate.clone());
-                    i += gate.gate.size;
-                } else {
-                    combined_gate = combined_gate.kronecker(QuantumGate::i_gate());
-                    i += 1;
-                }
-            }
-
-            println!("Combined gate: {:?}", combined_state.clone().apply_gate(combined_gate.clone()));
+            println!("Applying gate: \n{:?} to state \n{:?}, result: \n{:?}\n\n", gate.gate.clone(), combined_state, combined_state.clone().apply_gate(gate.gate.clone()));
 
             let new_state_wrapped = QuantumStateWrapper {
-                state: combined_state.apply_gate(combined_gate),
+                state: combined_state.apply_gate(gate.gate),
                 qubits: qubits_in_combined_state,
             };
 
@@ -108,11 +89,13 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
 fn combine_states_for_frontend(simulated_states: Vec<QuantumStep>) -> Vec<QuantumState> {
     let mut combined_states: Vec<QuantumState> = vec![];
     for step in simulated_states.iter(){
+        
         let mut current_state: QuantumState = step.states[0].state.clone();
         for entagled_group in step.states.iter().skip(1) {
-            current_state = entagled_group.state.clone().kronecker(current_state);
+            current_state = current_state.kronecker(entagled_group.state.clone());
         }
-        combined_states.push(current_state);
+        combined_states.push(to_little_endian(&current_state));
+        println!("Combining states:\n {:?}\ninto\n{:?}\n\n", step.states.clone(), current_state.clone());
     }
     combined_states
 }
@@ -187,7 +170,7 @@ mod tests {
 
         let expected_result = vec![
             QuantumState::new(&[0,0]),
-            QuantumState::new(&[0,1]),
+            QuantumState::new(&[0, 1]),
             QuantumState::new(&[1, 1]),
         ];
 
@@ -201,6 +184,7 @@ mod tests {
 
         let expected_result = vec![
             QuantumState::new(&[0,0]),
+            QuantumState::new(&[0,1]),
             QuantumState::new(&[1,0]),
         ];
 
