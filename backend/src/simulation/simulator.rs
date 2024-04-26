@@ -161,7 +161,7 @@ mod tests {
 
         let expected_result = vec![
             QuantumState::new(&[0,0]),
-            QuantumState::new(&[0,1]),
+            QuantumState::new(&[1,0]),
         ];
 
         assert_eq!(result.unwrap(), expected_result);
@@ -174,7 +174,7 @@ mod tests {
 
         let expected_result = vec![
             QuantumState::new(&[0,0]),
-            QuantumState::new(&[1,0]),
+            QuantumState::new(&[0,1]),
         ];
 
         assert_eq!(result.unwrap(), expected_result);
@@ -187,8 +187,21 @@ mod tests {
 
         let expected_result = vec![
             QuantumState::new(&[0,0]),
-            QuantumState::new(&[1,0]),
+            QuantumState::new(&[0,1]),
             QuantumState::new(&[1, 1]),
+        ];
+
+        assert_eq!(result.unwrap(), expected_result);
+    }
+
+    #[test]
+    fn test_swap_circuit() {
+        let incoming_data = vec![vec!["X", "Swap"], vec!["I", "Swap"]];
+        let result = simulate_circuit_handler(UnparsedCircuit::from(incoming_data));
+
+        let expected_result = vec![
+            QuantumState::new(&[0,0]),
+            QuantumState::new(&[1,0]),
         ];
 
         assert_eq!(result.unwrap(), expected_result);
@@ -201,12 +214,12 @@ mod tests {
 
         let expected_result = vec![
             QuantumState::new(&[0,0]),
-            QuantumState {
+            QuantumState::new(&[0]).kronecker(QuantumState {
                 col: arr2(&[
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
                 ]),
-            }.kronecker(QuantumState::new(&[0])),
+            }),
             QuantumState {
                 col: arr2(&[
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
@@ -234,20 +247,20 @@ mod tests {
 
         let expected_result = vec![
             QuantumState::new(&[0,0,0]),
-            QuantumState {
+            QuantumState::new(&[0,0]).kronecker(QuantumState {
                 col: arr2(&[
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
                 ]),
-            }.kronecker(QuantumState::new(&[0,0])),
-            QuantumState {
+            }),
+            QuantumState::new(&[0]).kronecker(QuantumState {
                 col: arr2(&[
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
                     [Complex::new(0.0, 0.0)],
                     [Complex::new(0.0, 0.0)],
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],
                 ]),
-            }.kronecker(QuantumState::new(&[0])),
+            }),
             QuantumState {
                 col: arr2(&[
                     [Complex::new(1.0 / 2.0_f64.sqrt(), 0.0)],

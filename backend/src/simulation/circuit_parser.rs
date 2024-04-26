@@ -95,7 +95,6 @@ fn entangle_qubits(input: ParsedCircuit) -> Vec<EntangledQubitGroupsInTimeStep> 
                 if first_qubit_group != second_qubit_group {
                     current_entangled_qubits = current_entangled_qubits.combine_entangled_groups(first_qubit_group.clone(), second_qubit_group.clone());
                 }
-                gate_index += 1;
             }
             gate_index += 1;
         }
