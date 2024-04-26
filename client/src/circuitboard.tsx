@@ -59,15 +59,15 @@ function Circuitboard(circuit: string[][]){
         const circuitLine = circuit[qubitLineId] || []; // Fallback to an empty array if circuit[qubitLineId] is undefined
       
         return (
-          <div className='qubitLine'>
-            <h2>|0⟩</h2>
-            <hr/>
-            <div className='slot-container'>
-              {//TODO create records for gateTypes and their corresponding names
-              }
-              {circuitLine.map((gate, index) => <Slot name={gate} gateType={gate} id={`${qubitLineId}${index}`} key={`${qubitLineId}${index}`} />)}
+            <div className='qubitLine'>
+              <h2>|0⟩</h2>
+              <hr/>
+              <div className='slot-container'>
+                {//TODO create records for gateTypes and their corresponding names
+                }
+                {circuitLine.map((gate, index) => <Slot name={gate} gateType={gate} id={`${qubitLineId}${index}`} key={`${qubitLineId}${index}`} />)}
+              </div>
             </div>
-          </div>
         );
       }
 
