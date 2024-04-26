@@ -110,7 +110,7 @@ fn combine_states_for_frontend(simulated_states: Vec<QuantumStep>) -> Vec<Quantu
     for step in simulated_states.iter(){
         let mut current_state: QuantumState = step.states[0].state.clone();
         for entagled_group in step.states.iter().skip(1) {
-            current_state = current_state.kronecker(entagled_group.state.clone());
+            current_state = entagled_group.state.clone().kronecker(current_state);
         }
         combined_states.push(current_state);
     }
