@@ -1,7 +1,7 @@
 
 use crate::simulation::circuit_parser::build_circuit_from_data;
 use crate::simulation::circuit_validator::{validate_grid_input, QuantumCircuitError};
-use crate::simulation::quantum_gate::{QuantumGate};
+use crate::simulation::quantum_gate::{QuantumGate, QuantumGateWrapper};
 use crate::simulation::quantum_state::{QuantumState, QuantumStateWrapper, QuantumStep};
 use crate::simulation::circuit_parser::{UnparsedCircuit, ParsedCircuit};
 use crate::simulation::utils::to_little_endian;
@@ -24,81 +24,80 @@ pub fn simulate_circuit_handler(incoming_data: UnparsedCircuit) -> Result<Vec<Qu
     Ok(combined_states)
 }
 
-fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
-    let mut states: QuantumStep = QuantumStep {
+fn initialize_states(circuit: ParsedCircuit) -> Vec<QuantumStep> {
+    let mut first_step: QuantumStep = QuantumStep {
         states: vec![],
     };
-
     for i in 0..circuit.circuit[0].gates.len() {
-        states.states.push(QuantumStateWrapper {
+        first_step.states.push(QuantumStateWrapper {
             state: QuantumState::new(&[0]),
             qubits: vec![i],
         });
     }
+    vec![first_step]
+}
 
 
-    let mut state_list: Vec<QuantumStep> = vec![states];
 
-    for (_step, step_gate) in circuit.circuit.into_iter().enumerate() {
-        let mut new_state_list: Vec<QuantumStateWrapper> = vec![];
+fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
+    
+    let mut state_list: Vec<QuantumStep> = initialize_states(circuit.clone()); 
 
-        for gate in step_gate.gates {
-            // Identify qubits that the gate will act on
-            let qubits_to_act_on = gate.qubits.clone();
-            // Get all previous states
-            let all_states = state_list.last().unwrap().states.clone();
-            // Collect all states that contain the qubits that the gate will act on
-            let filtered_states: Vec<QuantumStateWrapper> = all_states
-                .into_iter()
-                .filter(|state| state.qubits.iter().any(|qubit| qubits_to_act_on.contains(qubit)))
-                .collect();
+    for gates_in_step in circuit.circuit.into_iter() {
+        let mut states_in_step: Vec<QuantumStateWrapper> = vec![];
 
-
-            // TODO: Create helper function to combine stateWrappers to keep qubit information
-            let mut combined_state = QuantumState::new(&[0]);
-            let mut qubits_in_combined_state: Vec<usize> = vec![];
-
-            for (i, state) in filtered_states.iter().enumerate() {
-                if i == 0 {
-                    combined_state = state.state.clone();
-                    qubits_in_combined_state = state.qubits.clone();
-                } else {
-                    combined_state = combined_state.kronecker(state.state.clone());
-                    qubits_in_combined_state.extend(state.qubits.clone());
-                }
-            }
-
-            println!("Applying gate: \n{:?} to state \n{:?}, result: \n{:?}\n\n", gate.gate.clone(), combined_state, combined_state.clone().apply_gate(gate.gate.clone()));
-
-            let new_state_wrapped = QuantumStateWrapper {
-                state: combined_state.apply_gate(gate.gate),
-                qubits: qubits_in_combined_state,
-            };
-
-
-            new_state_list.push(new_state_wrapped);
+        for gate in gates_in_step.gates {
+            let states_in_prev_step = QuantumStep {states: state_list.last().unwrap().states.clone()};
+            let state_after_gate = calculate_qubits_state_after_gate(states_in_prev_step, gate);
+            
+            states_in_step.push(state_after_gate);
         }
 
         state_list.push(QuantumStep {
-            states: new_state_list,
+            states: states_in_step,
         });
     }
     state_list
 }
 
+fn calculate_qubits_state_after_gate(states_in_prev_step: QuantumStep, gate_wrapper: QuantumGateWrapper) -> QuantumStateWrapper {
+    let qubits_in_gate = gate_wrapper.qubits.clone();
+
+    let states_in_prev_step_gate_acts_on: Vec<QuantumStateWrapper> = states_in_prev_step.states
+        .into_iter()
+        .filter(|state| state.qubits.iter().any(|qubit| qubits_in_gate.contains(qubit)))
+        .collect();
+
+    let mut state_into_gate = combine_states(states_in_prev_step_gate_acts_on.clone());
+    let state_after_gate = state_into_gate.apply_gate(gate_wrapper.gate.clone());
+
+    let state_after_gate_wrapped = QuantumStateWrapper {
+        state: state_after_gate,
+        qubits: qubits_in_gate,
+    };
+    state_after_gate_wrapped
+}
+
+fn combine_states(states: Vec<QuantumStateWrapper>) -> QuantumState {
+    let mut current_state: QuantumState = states[0].state.clone();
+    for entagled_group in states.iter().skip(1) {
+        current_state = current_state.kronecker(entagled_group.state.clone());
+    }
+    println!("Combining states:\n {:?}\ninto\n{:?}\n\n", states.clone(), current_state.clone());
+    current_state
+}
+
 fn combine_states_for_frontend(simulated_states: Vec<QuantumStep>) -> Vec<QuantumState> {
     let mut combined_states: Vec<QuantumState> = vec![];
     for step in simulated_states.iter(){
+        let combined_states_in_step = combine_states(step.states.clone());
+        combined_states.push(to_little_endian(&combined_states_in_step));
         
-        let mut current_state: QuantumState = step.states[0].state.clone();
-        for entagled_group in step.states.iter().skip(1) {
-            current_state = current_state.kronecker(entagled_group.state.clone());
-        }
-        combined_states.push(to_little_endian(&current_state));
-        println!("Combining states:\n {:?}\ninto\n{:?}\n\n", step.states.clone(), current_state.clone());
     }
     combined_states
 }
+
+
 
 #[cfg(test)]
 mod tests {
