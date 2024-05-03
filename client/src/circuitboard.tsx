@@ -9,7 +9,6 @@ function Circuitboard( { circuit, setCircuit, sendCircuit} :{circuit: string[][]
     const [qubitLines, setQubitLines] = useState<ReactNode[]>([]);
 
     useEffect(() => {
-      console.log("setqubitlines-circuit: " + circuit)
       setQubitLines([
         <div>
           <QubitLine id="0"/>
@@ -41,8 +40,6 @@ function Circuitboard( { circuit, setCircuit, sendCircuit} :{circuit: string[][]
               <h2>|0⟩</h2>
               <hr/>
               <div className='slot-container'>
-                {//TODO create records for gateTypes and their corresponding names
-                }
                 {circuitLine.map((gate, index) => <Slot name={gate} gateType={gate} id={`${qubitLineId}${index}`} key={`${qubitLineId}${index}`} circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit}/>)}
               </div>
             </div>
@@ -54,8 +51,6 @@ function Circuitboard( { circuit, setCircuit, sendCircuit} :{circuit: string[][]
       <section className="circuit">
         {qubitLines}
       </section>
-      {/*<button onClick={addQubit}>+</button>
-      <button onClick={removeQubit}>-</button>*/}
     </div>)
   }
   export default Circuitboard;

@@ -8,9 +8,7 @@ import Circuitboard from './circuitboard';
 import './slider.css';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { ChartsAxisHighlightPath, ChartsAxisTooltipContent, ChartsItemTooltipContent, ChartsTooltip, chartsTooltipClasses, legendClasses } from '@mui/x-charts';
-import { Tooltip, tooltipClasses } from '@mui/material';
-
+import { chartsTooltipClasses, legendClasses } from '@mui/x-charts';
 
 
 function App() {
@@ -46,11 +44,9 @@ function App() {
 
   useEffect(() => {
     // This effect will be triggered whenever the circuit state changes
-    console.log("Skickade circuit i useEffect")
     sendCircuit();
   }, [circuit,stepNumber]);
 
-  // TODO implement setCircuit (aka add + and - buttons).
 
   return (
     <div className="App">
@@ -246,10 +242,6 @@ function handleDragEnd(event:any){
 
     const tickPlacement = 'middle';
     const tickLabelPlacement = 'middle';
-
-    
-
-    
   
     return (
       <section className="states">

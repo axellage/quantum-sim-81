@@ -22,7 +22,6 @@ function Slot(props:any) {
       
       props.setCircuit(newCircuit);
       props.sendCircuit();
-      console.log("clicked" + JSON.stringify(props.circuit))
     }
 
     return (
