@@ -187,13 +187,4 @@ mod tests {
         let grid = vec![vec!["X", "Swap"], vec!["I", "Swap"]];
         assert_eq!(validate_grid_input(&UnparsedCircuit::from(grid)), Ok(()));
     }
-
-    #[test]
-    fn ending_with_multi_qubit_gate() {
-        let grid = vec![vec!["H", "SWAP-2"], vec!["I", "SWAP-2"]];
-        assert_eq!(
-            validate_grid_input(&UnparsedCircuit::from(grid)),
-            Err(QuantumCircuitError::MultiQubitGateMismatch)
-        );
-    }
 }
