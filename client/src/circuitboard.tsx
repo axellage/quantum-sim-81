@@ -3,10 +3,13 @@ import './circuitboard.css';
 import './toolbar.css';
 import Slot from './slot';
 
-function Circuitboard(circuit: string[][]){
+
+
+function Circuitboard( { circuit, setCircuit, sendCircuit} :{circuit: string[][], setCircuit : (circuit: string[][]) => void, sendCircuit: () => void}){
     const [qubitLines, setQubitLines] = useState<ReactNode[]>([]);
 
     useEffect(() => {
+      console.log("setqubitlines-circuit: " + circuit)
       setQubitLines([
         <div>
           <QubitLine id="0"/>
@@ -27,7 +30,7 @@ function Circuitboard(circuit: string[][]){
           <QubitLine id="5"/>
         </div>
       ]);
-    }, [circuit]); // Circuit dependency array to make it only update when circuit is changed
+    }, [circuit, sendCircuit]); // Circuit dependency array to make it only update when circuit is changed
 
     function QubitLine(props:any) {
         const qubitLineId = Number(props.id);
@@ -40,7 +43,7 @@ function Circuitboard(circuit: string[][]){
               <div className='slot-container'>
                 {//TODO create records for gateTypes and their corresponding names
                 }
-                {circuitLine.map((gate, index) => <Slot name={gate} gateType={gate} id={`${qubitLineId}${index}`} key={`${qubitLineId}${index}`} />)}
+                {circuitLine.map((gate, index) => <Slot name={gate} gateType={gate} id={`${qubitLineId}${index}`} key={`${qubitLineId}${index}`} circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit}/>)}
               </div>
             </div>
         );

@@ -14,9 +14,20 @@ function Slot(props:any) {
       opacity: (isOver ? .8 : 1)
     };
 
+    function removeGate() {
+      let qubit = Number(props.id[0]);
+      let index = Number(props.id.substring(1));
+      let newCircuit = props.circuit;
+      newCircuit[qubit][index] = "I";
+      
+      props.setCircuit(newCircuit);
+      props.sendCircuit();
+      console.log("clicked" + JSON.stringify(props.circuit))
+    }
+
     return (
     <div ref={setNodeRef} style={style}>
-        <PlacedGate name = {props.name} gateType = {props.gateType}/>
+        <PlacedGate name = {props.name} gateType = {props.gateType} removeGate = {removeGate} handleDragEnd={props.handleDragEnd}/>
     </div>
     );
 }

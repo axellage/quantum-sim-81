@@ -7,7 +7,7 @@
 
 .gates {
     display: grid;
-    grid-template-columns: auto auto ;
+    grid-template-columns: auto auto auto;
     width: 5%;
 }
 

@@ -38,24 +38,25 @@ function App() {
 
   const changeGraph = (e:any) => {
     setDisplayedGraph(e.target!.value);
-    sendCircuit();
-    
   }
   const onChange = (e:any) => {
+    sendCircuit();
     setStepNumber(e.target!.value)
   }
+
   useEffect(() => {
     // This effect will be triggered whenever the circuit state changes
+    console.log("Skickade circuit i useEffect")
     sendCircuit();
-  }, [circuit]);
+  }, [circuit,stepNumber]);
 
   // TODO implement setCircuit (aka add + and - buttons).
 
   return (
     <div className="App">
       <DndContext onDragEnd={handleDragEnd}>
-        <Toolbar />
-        <Circuitboard {...circuit}/> {/*shallow copy of circuit to circuitboard, solve for it to be in circuitboard later*/}
+        <Toolbar setCircuit={setCircuit}/>
+        <Circuitboard circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit}/> {/*shallow copy of circuit to circuitboard, solve for it to be in circuitboard later*/}
         {/*<button onClick={sendCircuit}>send circuit</button>*/}
         <div className='slider-container'>
           <input
@@ -122,7 +123,7 @@ function handleDragEnd(event:any){
       }
     }
 
-    if(active.id === "Swap"){
+    /*if(active.id === "Swap"){
       let placable = true;
       for (let i = 0; i < circuit.length; i++) {
         if (circuit[i].includes("Swap")) {
@@ -136,7 +137,7 @@ function handleDragEnd(event:any){
       if(!placable){
         return;
       }
-    }
+    }*/
 
     console.log("Placed gate on position " + over.id.substring(1) + " on qubit line " + over.id[0]);
 
@@ -161,12 +162,12 @@ function handleDragEnd(event:any){
 
   async function sendCircuit() {
     console.log("Circuit:")
-    console.log(circuit);
+    console.log(JSON.stringify(circuit));
     const response = await axios.post('http://localhost:8000/simulate',
         {circuit_matrix: circuit})
   .then(function(response: any){
     console.log("statelist")
-    console.log(response.data.state_list[stepNumber]);
+    console.log(response.data.state_list);
     setStates(response.data.state_list[stepNumber].col.data);
   })}
 
@@ -285,7 +286,6 @@ function getStatesOrProbabilities(returnProb: boolean, stateList: {0:number, 1:n
   let probabilities: {probability: number, bitstring: string}[] = [];
   let statevecs: {amplitude: number, bitstring: string}[] = [];
   let amplitude: number;
-  let phaseAngle: number;
   let bitstring: string;
   let probability: number;
 
