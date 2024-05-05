@@ -11,7 +11,9 @@ function Slot(props:any) {
 
     // TODO: Move to CSS.
     const style = {
-      opacity: (isOver ? .8 : 1)
+      opacity: (isOver ? .8 : 1),
+      width: '50px',
+      height: '50px'
     };
 
     function removeGate() {

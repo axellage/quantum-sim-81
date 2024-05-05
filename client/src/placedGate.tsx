@@ -28,7 +28,7 @@ function PlacedGate(props:any){
           </button>
         );
       }
-    } 
+    }
     else return null;
     
     

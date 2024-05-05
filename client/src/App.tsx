@@ -6,6 +6,7 @@ import {DndContext} from '@dnd-kit/core';
 import axios from 'axios';
 import Circuitboard from './circuitboard';
 import './slider.css';
+import './app.css';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
 import { chartsTooltipClasses, legendClasses } from '@mui/x-charts';
@@ -32,7 +33,11 @@ function App() {
   const [states, setStates] = useState([{"0":1, "1":0}]);
   const [stepNumber, setStepNumber] = useState(25);
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
-  
+
+  //Oracle visibility work around
+  const [isOracleVisible, setIsOracleVisible] = useState(false);
+  const [isUniVisible, setIsUniVisible] = useState(false);
+
 
   const changeGraph = (e:any) => {
     setDisplayedGraph(e.target!.value);
@@ -51,45 +56,48 @@ function App() {
   return (
     <div className="App">
       <DndContext onDragEnd={handleDragEnd}>
-        <Toolbar setCircuit={setCircuit}/>
-        <Circuitboard circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit}/> {/*shallow copy of circuit to circuitboard, solve for it to be in circuitboard later*/}
-        {/*<button onClick={sendCircuit}>send circuit</button>*/}
-        <div className='slider-container'>
-          <input
-            type='range'
-            min={1}
-            max={25}
-            defaultValue={25}
-            step={1}
-            className='range'
-            onChange={onChange}
-          />
-          <div className='step-numbers'>
-            <p>1</p>
-            <p>2</p>
-            <p>3</p>
-            <p>4</p>
-            <p>5</p>
-            <p>6</p>
-            <p>7</p>
-            <p>8</p>
-            <p>9</p>
-            <p>10</p>
-            <p>11</p>
-            <p>12</p>
-            <p>13</p>
-            <p>14</p>
-            <p>15</p>
-            <p>16</p>
-            <p>17</p>
-            <p>18</p>
-            <p>19</p>
-            <p>20</p>
-            <p>21</p>
-            <p>22</p>
-            <p>23</p>
-            <p>24</p>
-            <p>25</p>
+        <div className='circuit-tools'>
+          <Toolbar setCircuit={setCircuit} setIsOracleVisible={setIsOracleVisible} setIsUniVisible={setIsUniVisible} />
+          <div className='circuit-slider'>
+            <Circuitboard circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit} isOracleVisible={isOracleVisible} setIsOracleVisible={setIsOracleVisible} isUniVisible={isUniVisible} setIsUniVisible={setIsOracleVisible}/>
+            <div className='slider-container'>
+              <input
+                type='range'
+                min={1}
+                max={25}
+                defaultValue={25}
+                step={1}
+                className='range'
+                onChange={onChange}
+              />
+              <div className='step-numbers'>
+                <p>1</p>
+                <p>2</p>
+                <p>3</p>
+                <p>4</p>
+                <p>5</p>
+                <p>6</p>
+                <p>7</p>
+                <p>8</p>
+                <p>9</p>
+                <p>10</p>
+                <p>11</p>
+                <p>12</p>
+                <p>13</p>
+                <p>14</p>
+                <p>15</p>
+                <p>16</p>
+                <p>17</p>
+                <p>18</p>
+                <p>19</p>
+                <p>20</p>
+                <p>21</p>
+                <p>22</p>
+                <p>23</p>
+                <p>24</p>
+                <p>25</p>
+              </div>
+            </div>
           </div>
         </div>
         <select className="dropdown"  onChange={changeGraph}>
@@ -100,7 +108,6 @@ function App() {
       </DndContext>
     </div>
   );
-  
   
 
 function handleDragEnd(event:any){
@@ -198,11 +205,11 @@ function handleDragEnd(event:any){
     const chartSetting = {
       yAxis: [
         {
-         min: 0, max: 1,
+         min: 0, max: 1, label: `${seriesLabel}`
         },
       ],
       series: [{ dataKey: `${seriesDatakey}`, valueFormatter, label: `${seriesLabel}`}],
-      height: 300,
+      height: 415,
       sx: {
         [`& .${axisClasses.directionY} .${axisClasses.label} `]: {
           transform: 'translateX(-10px)',
@@ -222,6 +229,10 @@ function handleDragEnd(event:any){
         },
         [`& .${axisClasses.directionX} .${axisClasses.tick}`]: {
           stroke: '#ffffff',
+        },
+        [`& .${axisClasses.directionX} .${axisClasses.label}`]: {
+          fill: '#ffffff',
+          transform: 'translateY(40px)'
         },
         [`& .${axisClasses.directionX} .${axisClasses.tickLabel}`]: {
           transform: 'rotate(-90deg) translateX(-35px) translateY(-13px)',
@@ -248,11 +259,11 @@ function handleDragEnd(event:any){
         <BarChart
         dataset={dataset}
         xAxis={[
-          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement, tickLabelInterval: () => true},
+          { scaleType: 'band', dataKey: 'bitstring', label: 'Computational basis states', tickPlacement, tickLabelPlacement, tickLabelInterval: () => true},
         ]}
         margin={{
           top: 10,
-          bottom: 60,
+          bottom: 90,
         }}
         slotProps={{
           legend : {

@@ -5,7 +5,7 @@ import Slot from './slot';
 
 
 
-function Circuitboard( { circuit, setCircuit, sendCircuit} :{circuit: string[][], setCircuit : (circuit: string[][]) => void, sendCircuit: () => void}){
+function Circuitboard( { circuit, setCircuit, sendCircuit, isOracleVisible, setIsOracleVisible, isUniVisible, setIsUniVisible} :{circuit: string[][], setCircuit : (circuit: string[][]) => void, sendCircuit: () => void, isOracleVisible: boolean, setIsOracleVisible: (isVisible: boolean) => void, isUniVisible: boolean, setIsUniVisible: (isVisible: boolean) => void}){
     const [qubitLines, setQubitLines] = useState<ReactNode[]>([]);
 
     useEffect(() => {
@@ -46,9 +46,19 @@ function Circuitboard( { circuit, setCircuit, sendCircuit} :{circuit: string[][]
         );
       }
 
+    const hideOracle = () => {
+      setIsOracleVisible(false);
+    }
+
+    const hideUni = () => {
+      setIsUniVisible(false);
+    }
+
     return(
     <div>
       <section className="circuit">
+        {isOracleVisible && <button className='oracle' onClick={hideOracle}>Oracle</button>}
+        {isUniVisible && <button className='unitary' onClick={hideUni}>U</button>}
         {qubitLines}
       </section>
     </div>)

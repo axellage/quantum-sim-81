@@ -1,8 +1,11 @@
 .Toolbar {
     display: flex;
-    width: 20%;
+    flex-direction: column;
+    width: 100%;
     justify-content: space-between;
-    padding: 1rem;
+    padding-left: 1rem;
+    color: white;
+    height: 95%;
 }
 
 .gates {
@@ -11,4 +14,7 @@
     width: 5%;
 }
 
-
+.control-swap {
+    display: flex;
+    width: 100%;
+}

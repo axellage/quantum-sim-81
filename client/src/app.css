@@ -1,0 +1,19 @@
+.App {
+    height: 100vh;
+}
+
+.circuit-tools{
+    display: grid;
+    grid-template-columns: auto auto;
+}
+
+.circuit-slider {
+    background-color: #22252b;
+    padding: 1rem;
+
+}
+
+.states {
+    height: fit-content;
+    padding-left: 1rem;
+}
