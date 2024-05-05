@@ -18,3 +18,25 @@
     display: flex;
     width: 100%;
 }
+
+.gates-tip {
+    display: flex;
+    background-color: #151515;
+    padding-right: 15px;
+    position: absolute;
+    z-index: 100;
+    width: 400px;
+    margin-left: 100px;
+    justify-content: space-between;
+    padding-left: 15px;
+    border-radius: 8px;
+}
+
+.gates-tip p {
+    width: 190px;
+    font-size: 15px;
+}
+
+.Toolbar img:hover {
+    cursor: pointer;
+}
