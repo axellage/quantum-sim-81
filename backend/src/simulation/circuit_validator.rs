@@ -13,7 +13,6 @@ pub enum QuantumCircuitError {
     TooFewQubits,
     InvalidGate,
     InvalidRowLength,
-    MultiQubitGateMismatch,
 }
 
 // Ensures that all rows are the same length and that there is at least one row
@@ -65,58 +64,18 @@ fn validate_gate(gate: &str) -> bool {
     )
 }
 
-// If a multi-qubit gate, return the other parts of the gate which must be in the same step
-fn is_multi_qubit_gate(gate: &str) -> &str {
-    match gate {
-        "SWAP-1" => "SWAP-2",
-        _ => "",
-    }
-}
-
-fn is_sub_gate(gate: &str) -> bool {
-    matches!(gate, "CNOT-2" | "CCNOT-2" | "CCNOT-3" | "SWAP-2")
-}
-
-fn ensure_multi_qubit_gate(gate: &str, prev_gate: &str) -> Result<(), QuantumCircuitError> {
-    if is_sub_gate(gate) && prev_gate.is_empty() && is_multi_qubit_gate(prev_gate) != gate {
-        return Err(QuantumCircuitError::MultiQubitGateMismatch);
-    }
-
-    Ok(())
-}
-
 // Validate a row of gates
 // Go through each gate and check if it is valid
 // If a multi-qubit gate is present, check if the other parts of the gate are in the same step
 // by adding them to a list and removing them if they are found
 fn validate_col(row: &Vec<String>) -> Result<(), QuantumCircuitError> {
-    let mut next_multi_qubit_gate = "";
-
     for gate in row {
         if !validate_gate(gate) {
             return Err(QuantumCircuitError::InvalidGate);
         }
-
-        if !next_multi_qubit_gate.is_empty() && gate != next_multi_qubit_gate {
-            println!(
-                "gate: {}, next_multi_qubit_gate: {}",
-                gate, next_multi_qubit_gate
-            );
-            return Err(QuantumCircuitError::MultiQubitGateMismatch);
-        }
-
-        if ensure_multi_qubit_gate(gate, next_multi_qubit_gate).is_err() {
-            return Err(QuantumCircuitError::MultiQubitGateMismatch);
-        }
-
-        next_multi_qubit_gate = is_multi_qubit_gate(gate);
     }
 
-    if next_multi_qubit_gate.is_empty() {
-        Ok(())
-    } else {
-        Err(QuantumCircuitError::MultiQubitGateMismatch)
-    }
+    Ok(())
 }
 
 #[cfg(test)]
