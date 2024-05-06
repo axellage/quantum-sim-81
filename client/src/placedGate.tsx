@@ -16,7 +16,7 @@ function PlacedGate(props:any){
       }else if(props.gateType === "Swap"){
         return(
             <button className = "placed-swap" onClick={props.removeGate}>
-              <p>x</p>
+              <p>×</p>
               <div className='swap-line'></div>
             </button>
         );

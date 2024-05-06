@@ -40,3 +40,8 @@
 .Toolbar img:hover {
     cursor: pointer;
 }
+
+
+.algorithms > * {
+    padding: 5px;
+}

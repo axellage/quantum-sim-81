@@ -34,12 +34,12 @@ function Toolbar( {setCircuit, setIsOracleVisible, setIsUniVisible}: {setCircuit
     return (
     <div className='Toolbar'>
       <div className='gates-container'>
-        <h1>Gates <img src={tooltip} style={{height: '25px', width: '25px'}} onMouseEnter={e => {
+        <h2>Gates <img src={tooltip} style={{height: '25px', width: '25px'}} onMouseEnter={e => {
                      setStyle({display: 'flex'});
                  }}
                  onMouseLeave={e => {
                      setStyle({display: 'none'})
-                 }}/></h1>
+                 }}/></h2>
         <div className='gates-tip' style={style}>
           <p> <b>X</b>: The Pauli-X gate is the quantum equivalent of the NOT gate for classical computers with respect to the standard basis |0⟩ 
             , |1⟩, which distinguishes the z axis on the Bloch sphere. It is sometimes called 
@@ -62,12 +62,12 @@ function Toolbar( {setCircuit, setIsOracleVisible, setIsUniVisible}: {setCircuit
           <Gate name="T" id = "T"/>
         </div>
       </div>
-      <h1>Control <img src={tooltip} style={{height: '25px', width: '25px'}}/></h1>
+      <h2>Control & Swap<img src={tooltip} style={{height: '25px', width: '25px'}}/></h2>
       <div className='control-swap'>
         <Gate name="." id = "C_down"/>
-        <Gate name="W" id = "Swap"/>
+        <Gate name="Swap" id = "Swap"/>
       </div>
-      <h1>Algorithms <img src={tooltip} style={{height: '25px', width: '25px'}}/></h1>
+      <h2>Algorithms <img src={tooltip} style={{height: '25px', width: '25px'}}/></h2>
       <div className='algorithms'>
         <button onClick={handleQFT}>QFT</button>
         <button onClick={handleGrover}>Grover's</button>
