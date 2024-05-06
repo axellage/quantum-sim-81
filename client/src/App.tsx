@@ -6,11 +6,10 @@ import {DndContext} from '@dnd-kit/core';
 import axios from 'axios';
 import Circuitboard from './circuitboard';
 import './slider.css';
+import './app.css';
 import { BarChart, barElementClasses } from '@mui/x-charts/BarChart';
 import { axisClasses } from '@mui/x-charts/ChartsAxis';
-import { ChartsAxisHighlightPath, ChartsAxisTooltipContent, ChartsItemTooltipContent, ChartsTooltip, chartsTooltipClasses, legendClasses } from '@mui/x-charts';
-import { Tooltip, tooltipClasses } from '@mui/material';
-
+import { chartsTooltipClasses, legendClasses } from '@mui/x-charts';
 
 
 function App() {
@@ -34,65 +33,71 @@ function App() {
   const [states, setStates] = useState([{"0":1, "1":0}]);
   const [stepNumber, setStepNumber] = useState(25);
   const [displayedGraph, setDisplayedGraph] = useState("Probabilities");
-  
+
+  //Oracle visibility work around
+  const [isOracleVisible, setIsOracleVisible] = useState(false);
+  const [isUniVisible, setIsUniVisible] = useState(false);
+
 
   const changeGraph = (e:any) => {
     setDisplayedGraph(e.target!.value);
-    sendCircuit();
-    
   }
   const onChange = (e:any) => {
+    sendCircuit();
     setStepNumber(e.target!.value)
   }
+
   useEffect(() => {
     // This effect will be triggered whenever the circuit state changes
     sendCircuit();
-  }, [circuit]);
+  }, [circuit,stepNumber]);
 
-  // TODO implement setCircuit (aka add + and - buttons).
 
   return (
     <div className="App">
       <DndContext onDragEnd={handleDragEnd}>
-        <Toolbar />
-        <Circuitboard {...circuit}/> {/*shallow copy of circuit to circuitboard, solve for it to be in circuitboard later*/}
-        {/*<button onClick={sendCircuit}>send circuit</button>*/}
-        <div className='slider-container'>
-          <input
-            type='range'
-            min={1}
-            max={25}
-            defaultValue={25}
-            step={1}
-            className='range'
-            onChange={onChange}
-          />
-          <div className='step-numbers'>
-            <p>1</p>
-            <p>2</p>
-            <p>3</p>
-            <p>4</p>
-            <p>5</p>
-            <p>6</p>
-            <p>7</p>
-            <p>8</p>
-            <p>9</p>
-            <p>10</p>
-            <p>11</p>
-            <p>12</p>
-            <p>13</p>
-            <p>14</p>
-            <p>15</p>
-            <p>16</p>
-            <p>17</p>
-            <p>18</p>
-            <p>19</p>
-            <p>20</p>
-            <p>21</p>
-            <p>22</p>
-            <p>23</p>
-            <p>24</p>
-            <p>25</p>
+        <div className='circuit-tools'>
+          <Toolbar setCircuit={setCircuit} setIsOracleVisible={setIsOracleVisible} setIsUniVisible={setIsUniVisible} />
+          <div className='circuit-slider'>
+            <Circuitboard circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit} isOracleVisible={isOracleVisible} setIsOracleVisible={setIsOracleVisible} isUniVisible={isUniVisible} setIsUniVisible={setIsUniVisible}/>
+            <div className='slider-container'>
+              <input
+                type='range'
+                min={1}
+                max={25}
+                defaultValue={25}
+                step={1}
+                className='range'
+                onChange={onChange}
+              />
+              <div className='step-numbers'>
+                <p>1</p>
+                <p>2</p>
+                <p>3</p>
+                <p>4</p>
+                <p>5</p>
+                <p>6</p>
+                <p>7</p>
+                <p>8</p>
+                <p>9</p>
+                <p>10</p>
+                <p>11</p>
+                <p>12</p>
+                <p>13</p>
+                <p>14</p>
+                <p>15</p>
+                <p>16</p>
+                <p>17</p>
+                <p>18</p>
+                <p>19</p>
+                <p>20</p>
+                <p>21</p>
+                <p>22</p>
+                <p>23</p>
+                <p>24</p>
+                <p>25</p>
+              </div>
+            </div>
           </div>
         </div>
         <select className="dropdown"  onChange={changeGraph}>
@@ -103,7 +108,6 @@ function App() {
       </DndContext>
     </div>
   );
-  
   
 
 function handleDragEnd(event:any){
@@ -121,6 +125,22 @@ function handleDragEnd(event:any){
         return;
       }
     }
+
+    /*if(active.id === "Swap"){
+      let placable = true;
+      for (let i = 0; i < circuit.length; i++) {
+        if (circuit[i].includes("Swap")) {
+          if (over.id.substring(1) !== JSON.stringify(circuit[i].indexOf("Swap")) || (Math.abs(over.id[0]) - i) > 1) {
+            alert("Second swap must be placed on the qubit directly below the first");
+            placable = false;
+          }
+        }
+        
+      }
+      if(!placable){
+        return;
+      }
+    }*/
 
     console.log("Placed gate on position " + over.id.substring(1) + " on qubit line " + over.id[0]);
 
@@ -145,12 +165,12 @@ function handleDragEnd(event:any){
 
   async function sendCircuit() {
     console.log("Circuit:")
-    console.log(circuit);
+    console.log(JSON.stringify(circuit));
     const response = await axios.post('http://localhost:8000/simulate',
         {circuit_matrix: circuit})
   .then(function(response: any){
     console.log("statelist")
-    console.log(response.data.state_list[stepNumber]);
+    console.log(response.data.state_list);
     setStates(response.data.state_list[stepNumber].col.data);
   })}
 
@@ -185,11 +205,11 @@ function handleDragEnd(event:any){
     const chartSetting = {
       yAxis: [
         {
-         min: 0, max: 1,
+         min: 0, max: 1, label: `${seriesLabel}`
         },
       ],
       series: [{ dataKey: `${seriesDatakey}`, valueFormatter, label: `${seriesLabel}`}],
-      height: 300,
+      height: 415,
       sx: {
         [`& .${axisClasses.directionY} .${axisClasses.label} `]: {
           transform: 'translateX(-10px)',
@@ -210,6 +230,10 @@ function handleDragEnd(event:any){
         [`& .${axisClasses.directionX} .${axisClasses.tick}`]: {
           stroke: '#ffffff',
         },
+        [`& .${axisClasses.directionX} .${axisClasses.label}`]: {
+          fill: '#ffffff',
+          transform: 'translateY(40px)'
+        },
         [`& .${axisClasses.directionX} .${axisClasses.tickLabel}`]: {
           transform: 'rotate(-90deg) translateX(-35px) translateY(-13px)',
           fill: '#ffffff'
@@ -229,21 +253,17 @@ function handleDragEnd(event:any){
 
     const tickPlacement = 'middle';
     const tickLabelPlacement = 'middle';
-
-    
-
-    
   
     return (
       <section className="states">
         <BarChart
         dataset={dataset}
         xAxis={[
-          { scaleType: 'band', dataKey: 'bitstring', tickPlacement, tickLabelPlacement, tickLabelInterval: () => true},
+          { scaleType: 'band', dataKey: 'bitstring', label: 'Computational basis states', tickPlacement, tickLabelPlacement, tickLabelInterval: () => true},
         ]}
         margin={{
           top: 10,
-          bottom: 60,
+          bottom: 90,
         }}
         slotProps={{
           legend : {
@@ -269,7 +289,6 @@ function getStatesOrProbabilities(returnProb: boolean, stateList: {0:number, 1:n
   let probabilities: {probability: number, bitstring: string}[] = [];
   let statevecs: {amplitude: number, bitstring: string}[] = [];
   let amplitude: number;
-  let phaseAngle: number;
   let bitstring: string;
   let probability: number;
 
@@ -315,46 +334,6 @@ function toBitString(num: number): string {
 
   while (result.length < 6) {
       result = "0" + result;
-  }
-
-  return result;
-}
-
-interface ComplexNumber {
-  re: number;
-  im: number;
-}
-
-function generateCombinations(qubitProbabilities: ComplexNumber[]): ComplexNumber[] {
-  // Number of qubits
-  const numQubits: number = qubitProbabilities.length / 2;
-
-  // Generate all possible combinations of qubit states
-  const combinations: number[][] = [];
-  const keysArray = Array.from({ length: numQubits }, (_, i) => i); // Convert iterator to array
-  for (let i = 0; i < Math.pow(2, numQubits); i++) {
-      combinations.push(keysArray.map(j => (i >> j) & 1));
-  }
-
-  // Initialize the result array
-  const result: ComplexNumber[] = Array.from({ length: Math.pow(2, numQubits) }, () => ({ re: 0, im: 0 }));
-
-  // Iterate over combinations
-  for (let i = 0; i < combinations.length; i++) {
-      // Calculate the combined probability amplitude for the combination
-      let probabilityAmplitude: ComplexNumber = { re: 1, im: 0 };
-      for (let j = 0; j < combinations[i].length; j++) {
-          const bit: number = combinations[i][j];
-          const qubitIndex: number = j * 2 + bit;
-          const prob: ComplexNumber = qubitProbabilities[qubitIndex];
-          probabilityAmplitude = {
-              re: probabilityAmplitude.re * prob.re - probabilityAmplitude.im * prob.im,
-              im: probabilityAmplitude.re * prob.im + probabilityAmplitude.im * prob.re
-          };
-      }
-
-      // Assign the probability amplitude to the corresponding index
-      result[i] = probabilityAmplitude;
   }
 
   return result;

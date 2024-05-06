@@ -14,11 +14,26 @@ function Gate(props:any) {
         
       };
       
-      return (
-        <button className="gate" ref={setNodeRef} style={style} {...listeners} {...attributes}>
-          <h1>{props.name}</h1>
-        </button>
-      );
+      if(props.name === "."){
+        return (
+          <button className="gate" ref={setNodeRef} style={style} {...listeners} {...attributes}>
+            <div className='control-icon'></div>
+          </button>
+        );
+      }else if(props.id === "Swap") {
+        return (
+          <button className="gate" ref={setNodeRef} style={style} {...listeners} {...attributes}>
+            <div className='swap-icon'>×</div>
+            <div className='icon-line'></div>
+          </button>
+        );
+      }else {
+        return (
+          <button className="gate" ref={setNodeRef} style={style} {...listeners} {...attributes}>
+            <h1>{props.name}</h1>
+          </button>
+        );
+      }
   }
 
 export default Gate;

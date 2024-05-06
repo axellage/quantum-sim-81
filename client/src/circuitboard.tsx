@@ -3,7 +3,9 @@ import './circuitboard.css';
 import './toolbar.css';
 import Slot from './slot';
 
-function Circuitboard(circuit: string[][]){
+
+
+function Circuitboard( { circuit, setCircuit, sendCircuit, isOracleVisible, setIsOracleVisible, isUniVisible, setIsUniVisible} :{circuit: string[][], setCircuit : (circuit: string[][]) => void, sendCircuit: () => void, isOracleVisible: boolean, setIsOracleVisible: (isVisible: boolean) => void, isUniVisible: boolean, setIsUniVisible: (isVisible: boolean) => void}){
     const [qubitLines, setQubitLines] = useState<ReactNode[]>([]);
 
     useEffect(() => {
@@ -27,32 +29,7 @@ function Circuitboard(circuit: string[][]){
           <QubitLine id="5"/>
         </div>
       ]);
-    }, [circuit]); // Circuit dependency array to make it only update when circuit is changed
-  
-  {/*  const addQubit = () => {
-      if (qubitLines.length < 6) {
-        setQubitLines(prevQubitLines => [
-          ...prevQubitLines,
-          <div>
-            <QubitLine id={JSON.stringify(qubitLines.length)}/>
-          </div>
-        ]);
-      }
-      else {
-        alert("No more qubits can be added");
-        console.log("No more qubits can be added");
-      }
-    };
-  
-    const removeQubit = () => {
-      if (qubitLines.length > 1) {
-        setQubitLines(prevQubitLines => prevQubitLines.slice(0, -1));
-      }
-      else {
-        //TODO make this a visible error
-        console.log("Already 0 qubits");
-      }
-    };*/}
+    }, [circuit, sendCircuit]); // Circuit dependency array to make it only update when circuit is changed
 
     function QubitLine(props:any) {
         const qubitLineId = Number(props.id);
@@ -63,21 +40,27 @@ function Circuitboard(circuit: string[][]){
               <h2>|0⟩</h2>
               <hr/>
               <div className='slot-container'>
-                {//TODO create records for gateTypes and their corresponding names
-                }
-                {circuitLine.map((gate, index) => <Slot name={gate} gateType={gate} id={`${qubitLineId}${index}`} key={`${qubitLineId}${index}`} />)}
+                {circuitLine.map((gate, index) => <Slot name={gate} gateType={gate} id={`${qubitLineId}${index}`} key={`${qubitLineId}${index}`} circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit}/>)}
               </div>
             </div>
         );
       }
 
+    const hideOracle = () => {
+      setIsOracleVisible(false);
+    }
+
+    const hideUni = () => {
+      setIsUniVisible(false);
+    }
+
     return(
     <div>
       <section className="circuit">
+        {isOracleVisible && <button className='oracle' onClick={hideOracle}>Oracle</button>}
+        {isUniVisible && <button className='unitary' onClick={hideUni}>Oracle</button>}
         {qubitLines}
       </section>
-      {/*<button onClick={addQubit}>+</button>
-      <button onClick={removeQubit}>-</button>*/}
     </div>)
   }
   export default Circuitboard;

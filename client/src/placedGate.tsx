@@ -8,19 +8,27 @@ function PlacedGate(props:any){
       if (props.gateType === "C_down") {
         return (
           <div className='placed-cnot-container'>
-            <div className = "placed-cnot">
-            </div>
+            <button className = "placed-cnot" onClick={props.removeGate}>
+            </button>
             <div className='cnot-line'></div>
           </div>
         );
+      }else if(props.gateType === "Swap"){
+        return(
+            <button className = "placed-swap" onClick={props.removeGate}>
+              <p>×</p>
+              <div className='swap-line'></div>
+            </button>
+        );
+
       }else{
         return (
-          <button className = "placedGate">
+          <button className = "placedGate" onClick={props.removeGate}>
             <h1>{props.name}</h1>
           </button>
         );
       }
-    } 
+    }
     else return null;
     
     
