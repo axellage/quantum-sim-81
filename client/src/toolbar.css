@@ -21,6 +21,7 @@
 
 .gates-tip {
     display: flex;
+    flex-direction: column;
     background-color: #151515;
     padding-right: 15px;
     position: absolute;
@@ -32,8 +33,61 @@
     border-radius: 8px;
 }
 
+.gates-tip section {
+    display: flex;
+}
+
 .gates-tip p {
     width: 190px;
+    font-size: 15px;
+}
+
+.control-tip {
+    display: flex;
+    flex-direction: column;
+    background-color: #151515;
+    padding-right: 15px;
+    position: absolute;
+    z-index: 100;
+    width: 400px;
+    margin-left: 150px;
+    justify-content: space-between;
+    padding-left: 15px;
+    border-radius: 8px;
+    margin-top: 220px;
+}
+
+.control-tip section {
+    display: flex;
+}
+
+.control-tip p {
+    width: 190px;
+    font-size: 15px;
+}
+
+.algo-tip {
+    display: flex;
+    flex-direction: column;
+    background-color: #151515;
+    padding-right: 15px;
+    position: absolute;
+    z-index: 100;
+    width: 500px;
+    margin-left: 130px;
+    justify-content: space-between;
+    padding-left: 15px;
+    border-radius: 8px;
+    margin-top: 350px;
+}
+
+.algo-tip section {
+    display: flex;
+    justify-content: space-between;
+}
+
+.algo-tip p {
+    width: 240px;
     font-size: 15px;
 }
 
@@ -44,4 +98,5 @@
 
 .algorithms > * {
     padding: 5px;
+    margin: 5px;
 }

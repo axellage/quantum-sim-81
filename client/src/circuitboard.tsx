@@ -58,7 +58,7 @@ function Circuitboard( { circuit, setCircuit, sendCircuit, isOracleVisible, setI
     <div>
       <section className="circuit">
         {isOracleVisible && <button className='oracle' onClick={hideOracle}>Oracle</button>}
-        {isUniVisible && <button className='unitary' onClick={hideUni}>U</button>}
+        {isUniVisible && <button className='unitary' onClick={hideUni}>Oracle</button>}
         {qubitLines}
       </section>
     </div>)

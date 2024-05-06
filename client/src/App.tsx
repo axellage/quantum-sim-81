@@ -59,7 +59,7 @@ function App() {
         <div className='circuit-tools'>
           <Toolbar setCircuit={setCircuit} setIsOracleVisible={setIsOracleVisible} setIsUniVisible={setIsUniVisible} />
           <div className='circuit-slider'>
-            <Circuitboard circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit} isOracleVisible={isOracleVisible} setIsOracleVisible={setIsOracleVisible} isUniVisible={isUniVisible} setIsUniVisible={setIsOracleVisible}/>
+            <Circuitboard circuit={circuit} setCircuit={setCircuit} sendCircuit={sendCircuit} isOracleVisible={isOracleVisible} setIsOracleVisible={setIsOracleVisible} isUniVisible={isUniVisible} setIsUniVisible={setIsUniVisible}/>
             <div className='slider-container'>
               <input
                 type='range'
