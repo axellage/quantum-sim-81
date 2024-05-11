@@ -48,7 +48,7 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
 
         for gate in gates_in_step.gates {
             let states_in_prev_step = QuantumStep {states: state_list.last().unwrap().states.clone()};
-            let state_after_gate = calculate_qubits_state_after_gate(states_in_prev_step, gate);
+            let state_after_gate = calculate_state_after_gate(states_in_prev_step, gate);
             
             states_in_step.push(state_after_gate);
         }
@@ -60,7 +60,7 @@ fn simulate_circuit(circuit: ParsedCircuit) -> Vec<QuantumStep> {
     state_list
 }
 
-fn calculate_qubits_state_after_gate(states_in_prev_step: QuantumStep, gate_wrapper: QuantumGateWrapper) -> QuantumStateWrapper {
+fn calculate_state_after_gate(states_in_prev_step: QuantumStep, gate_wrapper: QuantumGateWrapper) -> QuantumStateWrapper {
     let qubits_in_gate = gate_wrapper.qubits.clone();
 
     let states_in_prev_step_gate_acts_on: Vec<QuantumStateWrapper> = states_in_prev_step.states
